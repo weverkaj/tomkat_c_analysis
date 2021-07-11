@@ -1,0 +1,24 @@
+---
+title: "soil_data_cleanup"
+author: "Jacob Weverka"
+date: "7/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+```
+
+Read in the data
+
+```{r}
+
+data = tibble(files = list.files(here("data/soil"))) %>% 
+  mutate(data = map(files, ~ read_csv(here(paste("data/soil/"), .x))))
+
+
+
+```
+
