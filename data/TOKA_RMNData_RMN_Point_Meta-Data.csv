@@ -1,0 +1,45 @@
+Meta-data associated with TomKat Rangeland Monitoring Points,,,,,,,
+"*NAs are present when a point is located on the boundary of a particular pasture or field, for instance most scrub points.",,,,,,,
+,,,,,,,
+Point ID ,Field*,Pasture*,Acreage*,Latitude_DD,Longitude_DD,Ecosystem Type,Location in Ranch
+TOKA-007,Stage North,4,2.349430749,37.269,-122.380,Grassland,West
+TOKA-104,Stage South,5,7.330687411,37.267,-122.380,Grassland,West
+TOKA-111,Moore West,9,4.14130647,37.267,-122.373,Grassland,West
+TOKA-013,Elk,10,7.740187503,37.271,-122.373,Grassland,West
+TOKA-016,Elk,11,5.400336008,37.269,-122.371,Grassland,West
+TOKA-018,Fertility Flat,14,8.115810629,37.272,-122.369,Grassland,West
+TOKA-061,Perri,28,3.424686819,37.278,-122.355,Grassland,West
+TOKA-147,Oil Well,31,6.658928976,37.276,-122.355,Scrub,West
+TOKA-029,PRBO,32,9.601064563,37.271,-122.364,Grassland,West
+TOKA-030,Echo,33,4.603750671,37.267,-122.364,Grassland,West
+TOKA-126,Oak,34,7.0509183,37.263,-122.362,Grassland,West
+TOKA-057,Water Tank,43,8.0408518,37.263,-122.355,Grassland,East
+TOKA-080,The Y,47,3.111162473,37.263,-122.349,Grassland,East
+TOKA-067,Water Tank,49,4.632187695,37.261,-122.353,Grassland,East
+TOKA-154,The Y,50,5.029129677,37.260,-122.351,Grassland,East
+TOKA-068,Hay,53,8.804850157,37.258,-122.353,Grassland,East
+TOKA-055,Bull,56,6.623116578,37.256,-122.355,Grassland,East
+TOKA-129,Wild Rose,59,3.420833234,37.256,-122.362,Grassland,East
+TOKA-169,Koko,63,7.98773686,37.270,-122.344,Grassland,East
+TOKA-170,Koko,63,7.98773686,37.269,-122.344,Grassland,East
+TOKA-089,NA,65,3.027597177,37.276,-122.346,Grassland,East
+TOKA-099,Lane Hill,68,4.520140708,37.274,-122.339,Grassland,East
+TOKA-115,Moore East,16a,5.017578763,37.269,-122.369,Grassland,West
+TOKA-135,Warehouse,30a,13.25081945,37.274,-122.360,Grassland,West
+TOKA-137,Warehouse,30a,13.25081945,37.276,-122.357,Grassland,West
+TOKA-041,Horse Hill,58a,4.433379029,37.258,-122.360,Grassland,East
+TOKA-006,Stage South,6a,4.94605768,37.265,-122.380,Grassland,West
+TOKA-001,NA,NA,NA,37.265,-122.385,Scrub,West
+TOKA-020,NA,NA,NA,37.276,-122.369,Scrub,West
+TOKA-022,Moore East,NA,NA,37.267,-122.367,Grassland,West
+TOKA-034,NA,NA,NA,37.256,-122.364,Grassland,East
+TOKA-035,NA,NA,NA,37.278,-122.362,Scrub,West
+TOKA-045,NA,NA,NA,37.271,-122.360,Scrub,West
+TOKA-060,Oil Well,NA,NA,37.274,-122.355,Grassland,West
+TOKA-064,NA,NA,NA,37.272,-122.353,Grassland,East
+TOKA-071,NA,NA,NA,37.265,-122.351,Scrub,East
+TOKA-072,NA,NA,NA,37.267,-122.351,Scrub,East
+TOKA-091,NA,NA,NA,37.272,-122.344,Scrub,East
+TOKA-119,NA,NA,NA,37.272,-122.364,Grassland,West
+TOKA-122,NA,NA,NA,37.263,-122.364,Scrub,West
+TOKA-161,NA,NA,NA,37.270,-122.349,Scrub,East
