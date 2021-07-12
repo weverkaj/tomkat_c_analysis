@@ -15,10 +15,58 @@ Read in the data
 
 ```{r}
 
-data = tibble(files = list.files(here("data/soil"))) %>% 
-  mutate(data = map(files, ~ read_csv(here(paste("data/soil/"), .x))))
-
+data = tibble(files = list.files(here("data/soil"))) %>%
+  mutate(data = map(files, ~ read_csv(here(paste("data/soil/"), .x), 
+                                      col_types = cols(`Olsen P` = col_character(),
+                                                       `Sodium` = col_double(),
+                                                       `Total Nitrogen` = col_double(),
+                                                       `pH` = col_double(),
+                                                       `Sand` = col_double(),
+                                                       `Silt` = col_double(),
+                                                       `Clay` = col_double()
+                                                       )
+                                      )
+                    )
+         )  
 
 
 ```
 
+```{r}
+all_data = data %>% 
+  unnest(data) %>%
+  janitor::clean_names() %>% 
+  mutate(collect_date = lubridate::dmy(collect_date),
+         collect_date1 = lubridate::mdy(collect_date_1_rmn_metrics),
+         date = case_when(!is.na(collect_date) ~ collect_date,
+                          !is.na(collect_date1) ~ collect_date1
+                          ),
+         year = lubridate::year(date)
+  ) %>% 
+  filter(!is.na(date)) %>% 
+  select(files, depth_cm, year, point_id, date, olsen_p, sand, silt, clay, texture, p_h, cec, calcium, magnesium, potassium, sodium, total_org_carbon, total_nitrogen, total_nitrogen_2)
+  
+```
+
+
+
+```{r}
+d = all_data %>% 
+  nest(-files, -depth_cm, -year) %>% 
+  select(-files) %>% 
+  pivot_wider(id_cols = depth_cm, names_from = year, values_from = data) %>% 
+  mutate(`2015` = map2(`2015`, `2018`, ~ .x %>% 
+                         filter(point_id %in% .y$point_id) %>% 
+                         rename(nitrogen = total_nitrogen) %>% 
+                         mutate(cn = total_org_carbon/nitrogen)),
+         `2018` = map2(`2018`, `2015`, ~ .x %>% 
+                         filter(point_id %in% .y$point_id) %>% 
+                         rename(nitrogen = total_nitrogen_2)%>% 
+                         mutate(cn = total_org_carbon/nitrogen))
+         ) %>% 
+  mutate(change = map2(`2018`, `2015`, ~ .x %>% 
+                         select(point_id) %>% 
+                         mutate(c_change = .x$total_org_carbon - .y$total_org_carbon,
+                                n_change = .x$nitrogen - .y$nitrogen,
+                                cn_change = .x$cn - .y$cn)))
+```
