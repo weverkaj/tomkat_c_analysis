@@ -65,8 +65,43 @@ d = all_data %>%
                          mutate(cn = total_org_carbon/nitrogen))
          ) %>% 
   mutate(change = map2(`2018`, `2015`, ~ .x %>% 
-                         select(point_id) %>% 
+                         select(point_id, sand, silt, clay) %>% 
                          mutate(c_change = .x$total_org_carbon - .y$total_org_carbon,
+                                c_pc_change = (.x$total_org_carbon - .y$total_org_carbon)/.y$total_org_carbon,
                                 n_change = .x$nitrogen - .y$nitrogen,
                                 cn_change = .x$cn - .y$cn)))
 ```
+```{r}
+change = d %>% 
+  select(depth_cm, change) %>% 
+  unnest(change)
+
+ggplot(change, aes(x = c_change)) +
+  geom_histogram() +
+  facet_wrap(.~ depth_cm)
+
+ggplot(change, aes(x = n_change)) +
+  geom_histogram() +
+  facet_wrap(.~ depth_cm)
+
+ggplot(change, aes(x = cn_change)) +
+  geom_histogram() +
+  facet_wrap(.~ depth_cm)
+
+ggplot(change, aes(x = n_change, y = c_change, color = depth_cm)) +
+  geom_point()
+
+ggplot(change, aes(x = c_pc_change, color = depth_cm)) +
+  geom_histogram()+
+  facet_wrap(.~ depth_cm)
+
+ggplot(change, aes(x = c_change, y = cn_change, color = depth_cm)) +
+  geom_point()
+
+```
+
+```{r}
+m = lm(c_change ~ n_change, data = change)
+summary(m)
+```
+

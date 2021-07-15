@@ -1,0 +1,118 @@
+---
+title: "veg_data_cleanup"
+author: "Jacob Weverka"
+date: "7/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(vegan)
+```
+
+Read in data    
+```{r}
+
+veg = read_csv(here("data/veg/TOKA_RMNData_2018_RMN_Plants.csv"), skip = 3, col_types = cols(`Annual Forb` = col_double())) %>% 
+  janitor::clean_names() %>% 
+  drop_na(annual_forb)
+
+newveg = veg[,-1]
+points = veg[,1]
+
+```
+
+
+```{r}
+toka_lpi = read_csv(here("data/veg/toka_lpi.csv")) %>% 
+  janitor::clean_names() %>% 
+  mutate(date = lubridate::ymd(date),
+         year = lubridate::year(date)) %>% 
+  select(point_id, year, top_layer, starts_with("lower")) %>% 
+  janitor::remove_empty() %>% 
+  pivot_longer(c(top_layer, starts_with("lower")))
+  
+  
+  
+lpi_sum = toka_lpi %>%   
+  group_by(point_id, year) %>% 
+  count(value)
+
+com_table = lpi_sum %>% 
+  pivot_wider(id_cols = c(point_id, year), names_from = value, values_from = n) %>% 
+  mutate_all(~ replace_na(.x, 0)) %>% 
+  select(-`NA`, -L, - WL)
+
+```
+
+```{r}
+new_com_table = com_table %>% 
+  ungroup() %>% 
+  select(-point_id, -year)
+
+com.rda = rda(new_com_table)
+com_scores = scores(com.rda, display = "sites") %>% 
+  as.data.frame()
+
+plot(com_scores$PC1, com_scores$PC2)
+
+```
+
+
+
+
+
+```{r}
+my.rda = rda(newveg)
+
+
+
+```
+```{r}
+knitr::knit(here("code/soil_data_cleanup.Rmd"))
+```
+
+```{r}
+
+veg_st = decostand(newveg, "total")
+st_PCA = rda(veg_st)
+veg_scores = scores(st_PCA, display = "sites") %>% 
+  as.data.frame() %>% 
+  add_column(points) %>% 
+  left_join(change, by = "point_id")
+
+PCAvect = scores(st_PCA, display = "species") %>% 
+  as.data.frame()
+
+
+
+```
+
+
+
+
+
+```{r}
+surface = veg_scores %>% 
+  filter(depth_cm == "0 to 10")
+
+depth = veg_scores %>% 
+  filter(depth_cm == "10 to 40")
+
+ggplot(surface, aes(x = PC1, y = PC2)) +
+  geom_point(aes(color = cn_change), size = 2) +
+  geom_segment(data = PCAvect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
+  geom_text(data = PCAvect, aes(x = PC1, y = PC2, label = rownames(PCAvect))) + 
+  scale_color_viridis_c()
+
+ggplot(depth, aes(x = PC1, y = PC2)) +
+  geom_point(aes(color = cn_change), size = 2) +
+  geom_segment(data = PCAvect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
+  geom_text(data = PCAvect, aes(x = PC1, y = PC2, label = rownames(PCAvect))) + 
+  scale_color_brewer(palette = "RdBu") + 
+  scale_color_viridis_c()
+```
+```
+
