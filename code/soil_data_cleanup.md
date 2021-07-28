@@ -144,7 +144,8 @@ d = all_data %>%
                          mutate(c_change = .x$total_org_carbon - .y$total_org_carbon,
                                 c_pc_change = (.x$total_org_carbon - .y$total_org_carbon)/.y$total_org_carbon,
                                 n_change = .x$nitrogen - .y$nitrogen,
-                                cn_change = .x$cn - .y$cn)))
+                                cn_change = .x$cn - .y$cn,
+                                c_2018 = .x$total_org_carbon)))
 ```
 
 ```
@@ -168,7 +169,7 @@ ggplot(change, aes(x = c_change)) +
 ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 ```
 
-![plot of chunk unnamed-chunk-187](figure/unnamed-chunk-187-1.png)
+![plot of chunk unnamed-chunk-105](figure/unnamed-chunk-105-1.png)
 
 ```r
 ggplot(change, aes(x = n_change)) +
@@ -184,7 +185,7 @@ ggplot(change, aes(x = n_change)) +
 ## Warning: Removed 22 rows containing non-finite values (stat_bin).
 ```
 
-![plot of chunk unnamed-chunk-187](figure/unnamed-chunk-187-2.png)
+![plot of chunk unnamed-chunk-105](figure/unnamed-chunk-105-2.png)
 
 ```r
 ggplot(change, aes(x = cn_change)) +
@@ -200,7 +201,7 @@ ggplot(change, aes(x = cn_change)) +
 ## Warning: Removed 22 rows containing non-finite values (stat_bin).
 ```
 
-![plot of chunk unnamed-chunk-187](figure/unnamed-chunk-187-3.png)
+![plot of chunk unnamed-chunk-105](figure/unnamed-chunk-105-3.png)
 
 ```r
 ggplot(change, aes(x = n_change, y = c_change, color = depth_cm)) +
@@ -211,7 +212,7 @@ ggplot(change, aes(x = n_change, y = c_change, color = depth_cm)) +
 ## Warning: Removed 22 rows containing missing values (geom_point).
 ```
 
-![plot of chunk unnamed-chunk-187](figure/unnamed-chunk-187-4.png)
+![plot of chunk unnamed-chunk-105](figure/unnamed-chunk-105-4.png)
 
 ```r
 ggplot(change, aes(x = c_pc_change, color = depth_cm)) +
@@ -223,7 +224,7 @@ ggplot(change, aes(x = c_pc_change, color = depth_cm)) +
 ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 ```
 
-![plot of chunk unnamed-chunk-187](figure/unnamed-chunk-187-5.png)
+![plot of chunk unnamed-chunk-105](figure/unnamed-chunk-105-5.png)
 
 ```r
 ggplot(change, aes(x = c_change, y = cn_change, color = depth_cm)) +
@@ -234,7 +235,7 @@ ggplot(change, aes(x = c_change, y = cn_change, color = depth_cm)) +
 ## Warning: Removed 22 rows containing missing values (geom_point).
 ```
 
-![plot of chunk unnamed-chunk-187](figure/unnamed-chunk-187-6.png)
+![plot of chunk unnamed-chunk-105](figure/unnamed-chunk-105-6.png)
 
 
 ```r

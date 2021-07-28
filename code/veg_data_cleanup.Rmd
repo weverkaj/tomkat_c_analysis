@@ -43,22 +43,13 @@ lpi_sum = toka_lpi %>%
 com_table = lpi_sum %>% 
   pivot_wider(id_cols = c(point_id, year), names_from = value, values_from = n) %>% 
   mutate_all(~ replace_na(.x, 0)) %>% 
-  select(-`NA`, -L, - WL)
+  select(-`NA`, -L, - WL, - NOPLANT) %>% 
+  filter(point_id != "TOKA-013",
+         point_id != "TOKA-006")
 
 ```
 
-```{r}
-new_com_table = com_table %>% 
-  ungroup() %>% 
-  select(-point_id, -year)
 
-com.rda = rda(new_com_table)
-com_scores = scores(com.rda, display = "sites") %>% 
-  as.data.frame()
-
-plot(com_scores$PC1, com_scores$PC2)
-
-```
 
 
 
@@ -73,6 +64,82 @@ my.rda = rda(newveg)
 ```{r}
 knitr::knit(here("code/soil_data_cleanup.Rmd"))
 ```
+Generate the PCA
+```{r}
+data_18 = com_table %>% 
+  filter(year == 2018)
+
+points_18 = data_18$point_id
+
+new_com_table = data_18 %>% 
+  ungroup() %>% 
+  select(-point_id, -year) %>% 
+  decostand(method = "normalize")
+
+com.rda = rda(new_com_table)
+com_scores = scores(com.rda, display = "sites", choices = c(1,2,3,4)) %>% 
+  as.data.frame() %>% 
+  add_column(point_id = points_18) %>% 
+  left_join(change, by = "point_id")
+
+com_surface = com_scores %>% 
+  filter(depth_cm == "0 to 10")
+
+com_depth = com_scores %>% 
+  filter(depth_cm == "10 to 40")
+
+com_vect = scores(com.rda, display = "species", choices = c(1,2,3)) %>% 
+  as.data.frame() %>% 
+  mutate(mag = sqrt(PC1^2 + PC2^2))
+
+top_com = com_vect %>% 
+  slice_max(n = 10, order_by = mag)
+
+ggplot(z, aes(x = PC1, y = PC2)) +
+  geom_smooth(method = "lm") +
+  geom_point(aes(color = cn_change), size = 3) +
+  geom_segment(data = com_vect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
+  geom_text(data = top_com, aes(x = PC1, y = PC2, label = rownames(top_com)))
+```
+Do PCA axes correlate to C change or to C status in surface soils?
+```{r}
+#drop outlier
+z = com_surface %>% 
+  filter(point_id != "TOKA-089")
+
+#including outlier - change
+m_change = lm(c_change ~ PC1 + PC2 + PC3, data = com_surface)
+summary(m_change)
+plot(m_change)
+
+#including outlier - status
+m_status = lm(c_2018 ~ PC1 + PC2 + PC3, data = com_surface)
+summary(m_status)
+
+```
+
+```{r}
+cca(new_com_table ~ c_change + c_2018, data = com_surface)
+cca(new_com_table ~ c_change + c_2018, data = com_depth)
+
+ca = cca(new_com_table ~ com_surface$c_change + com_surface$c_2018 + com_depth$c_change + com_depth$c_2018)
+anova(ca)
+
+```
+
+Same question, but with deep soils
+```{r}
+#including outlier - change
+m_change = lm(c_change ~ PC1 + PC2 + PC3, data = com_depth)
+summary(m_change)
+plot(m_change)
+
+#including outlier - status
+m_status = lm(c_2018 ~ PC1 + PC2 + PC3, data = com_depth)
+summary(m_status)
+plot(m_status)
+```
+
 
 ```{r}
 
@@ -114,5 +181,13 @@ ggplot(depth, aes(x = PC1, y = PC2)) +
   scale_color_brewer(palette = "RdBu") + 
   scale_color_viridis_c()
 ```
+```{r}
+
+m1 = lm(c_pc_change ~ PC1 + PC2, data = surface)
+summary(m1)
+
+m2 = lm(c_pc_change ~ PC1 + PC2 + clay, data = depth)
+summary(m2)
 ```
+
 

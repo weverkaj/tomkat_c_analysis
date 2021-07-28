@@ -69,7 +69,8 @@ d = all_data %>%
                          mutate(c_change = .x$total_org_carbon - .y$total_org_carbon,
                                 c_pc_change = (.x$total_org_carbon - .y$total_org_carbon)/.y$total_org_carbon,
                                 n_change = .x$nitrogen - .y$nitrogen,
-                                cn_change = .x$cn - .y$cn)))
+                                cn_change = .x$cn - .y$cn,
+                                c_2018 = .x$total_org_carbon)))
 ```
 ```{r}
 change = d %>% 
