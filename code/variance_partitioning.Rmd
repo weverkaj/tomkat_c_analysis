@@ -1,0 +1,118 @@
+---
+title: "Variance Partitioning"
+author: "Jacob Weverka"
+date: "8/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read in cleanup from other files
+```{r results="hide"}
+knitr::knit(here("code/soil_data_cleanup.Rmd"))
+knitr::knit(here("code/veg_data_cleanup.Rmd"))
+knitr::knit(here("code/16S_cleanup.Rmd"))
+```
+
+
+
+Trim data to intersection of microbial data and change data
+```{r}
+
+change[41:80,3:5] = change[1:40,3:5]
+
+change_data = change %>% 
+  mutate(id = case_when(depth_cm == "10 to 40" ~ paste(point_id, "-40", sep = ""),
+                        depth_cm == "0 to 10" ~ paste(point_id, "-10", sep = ""))
+         ) %>% 
+  column_to_rownames("id") %>% 
+  filter(rownames(.) %in% otu_scores$point_id)
+
+change_data10 = change_data %>% 
+  filter(depth_cm == "0 to 10") %>% 
+  as.data.frame()
+
+change_data40 = change_data %>% 
+  filter(depth_cm == "10 to 40") %>% 
+  as.data.frame()
+
+c_change = toka_c_points %>% 
+  filter(rownames(.) %in% otu_scores$point_id) %>% 
+  filter(`2021` != 0)
+
+otu_standard_match10 = otu_standard %>% 
+  filter(rownames(.) %in% rownames(change_data10)) %>% 
+  as.data.frame()
+
+# family_standard_match = family_standard %>% 
+#   filter(rownames(.) %in% rownames(change_data))
+# 
+# class_standard_match = class_standard %>% 
+#   filter(rownames(.) %in% rownames(change_data))
+# 
+# otu_standard3 = otu_standard %>% 
+#   filter(rownames(.) %in% rownames(c_change))
+
+# family_standard3 = family_standard %>% 
+#   filter(rownames(.) %in% rownames(c_change))
+# 
+# class_standard3 = class_standard %>% 
+#   filter(rownames(.) %in% rownames(change_data))
+
+#separate into surface and depth
+change_mat10 = change %>% 
+  filter(depth_cm == "0 to 10") %>% 
+  column_to_rownames("point_id") %>% 
+  filter(rownames(.) %in% canopy_sum$point_id) %>% 
+  select(c_change, c_2018, c_pc_change, cn_change, n_2018, c_n_ratio, sand, silt, clay)
+
+change_mat40 = change %>% 
+  filter(depth_cm == "10 to 40") %>% 
+  column_to_rownames("point_id") %>% 
+  filter(rownames(.) %in% canopy_sum$point_id) %>% 
+  select(c_change, c_2018, c_pc_change, cn_change, n_2018, c_n_ratio, sand, silt, clay)
+
+#clean canopy data and select
+canopy_mat10 = canopy_sum %>% 
+  mutate(point_id = paste(point_id, "-10", sep = "")) %>% 
+  column_to_rownames("point_id") %>% 
+  select(-year) %>% 
+  mutate(DIAU = DIAU + DIAUA) %>% 
+  select(-DIAUA)%>% 
+  filter(rownames(.) %in% rownames(change_data10)) %>% 
+  as.data.frame()
+
+canopy_mat40 = canopy_sum %>% 
+  mutate(point_id = paste(point_id, "-40", sep = "")) %>% 
+  column_to_rownames("point_id") %>% 
+  select(-year) %>% 
+  mutate(DIAU = DIAU + DIAUA) %>% 
+  select(-DIAUA) %>% 
+  filter(rownames(.) %in% rownames(change_data40)) %>% 
+  as.data.frame()
+
+z = bind_cols(change_data10, canopy_mat10, otu_standard_match10)
+
+# c_10 = z[,c(6,10)]
+c_10 = z[,c(10)] %>% as.matrix()
+rownames(c_10) = rownames(z)
+colnames(c_10) = "c_2018"
+soil10 = z[,3:5] %>% as.matrix()
+canopy10 = z[13:19] %>% as.matrix()
+otu10 = z[,20:ncol(z)] %>% as.matrix()
+
+# change_data_vp10 = change_data10 %>% 
+
+```
+
+
+Variance partitioning c stock for plant and 16s data
+
+```{r}
+c_stock_10 = varpart(c_10, soil10, canopy10, otu10)
+
+
+```
+

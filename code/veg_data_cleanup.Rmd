@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(here)
 library(vegan)
+library(lubridate)
 ```
 
 Read in data    
@@ -26,13 +27,51 @@ points = veg[,1]
 
 
 ```{r}
+lpi_raw = toka_lpi = read_csv(here("data/veg/toka_lpi.csv"))
+
+lpi_count = toka_lpi = read_csv(here("data/veg/toka_lpi.csv")) %>% 
+  janitor::clean_names() %>% 
+  filter(!is.na(soil_surface)) %>% 
+  group_by(point_id, date) %>% 
+  count() %>% 
+  mutate(year = year(date))
+
 toka_lpi = read_csv(here("data/veg/toka_lpi.csv")) %>% 
   janitor::clean_names() %>% 
+  filter(!is.na(soil_surface)) %>% 
   mutate(date = lubridate::ymd(date),
          year = lubridate::year(date)) %>% 
   select(point_id, year, top_layer, starts_with("lower")) %>% 
   janitor::remove_empty() %>% 
   pivot_longer(c(top_layer, starts_with("lower")))
+
+toka_canopy = read_csv(here("data/veg/toka_lpi.csv")) %>% 
+  janitor::clean_names() %>% 
+  filter(!is.na(soil_surface)) %>% 
+  mutate(date = lubridate::ymd(date),
+         year = lubridate::year(date)) %>% 
+  select(point_id, point_index, direction, year, starts_with("canopy")) %>% 
+  janitor::remove_empty() %>% 
+  filter(year == 2018) %>% 
+  pivot_longer(c(starts_with("canopy")))
+
+canopy_cover = toka_canopy %>% 
+  filter(name == "canopy1",
+         !is.na(value)) %>% 
+  group_by(point_id, year) %>% 
+  count() %>% 
+  left_join(lpi_count, by = c("year", "point_id")) %>% 
+  mutate(percent_cover = n.x/n.y) %>% 
+  select(point_id, year, percent_cover)
+
+canopy_sum = toka_canopy %>% 
+  group_by(point_id, year) %>% 
+  count(value) %>% 
+  filter(!is.na(value)) %>% 
+  left_join(lpi_count, by = c("year", "point_id")) %>% 
+  mutate(percent_cover = n.x/n.y) %>% 
+  pivot_wider(id_cols = c(point_id, year), names_from = value, values_from = percent_cover) %>% 
+  mutate_all(~ replace_na(.x, 0))
   
   
   
@@ -47,8 +86,85 @@ com_table = lpi_sum %>%
   filter(point_id != "TOKA-013",
          point_id != "TOKA-006")
 
+load(here("data/veg/CAPlantsv2.RData"))
+
+fungrps = CAPlantsv2 %>% 
+  janitor::clean_names() %>% 
+  select(symbol, fun_grp)
+
+lpi_fun_sum = lpi_sum %>% 
+  left_join(fungrps, by = c("value" = "symbol"))
+
+
+lpi_fun_sum$fun_grp[lpi_fun_sum$value == "2GA"] = "Annual Grass"
+lpi_fun_sum$fun_grp[lpi_fun_sum$value == "2FA"] = "Annual Forb"
+lpi_fun_sum$fun_grp[lpi_fun_sum$value == "2GP"] = "Perennial Grass"
+
+lpi_fun = lpi_fun_sum %>% 
+  group_by(point_id, year, fun_grp) %>% 
+  summarise(n = sum(n))
+
+com_table_fun = lpi_fun %>% 
+  pivot_wider(id_cols = c(point_id, year), names_from = fun_grp, values_from = n) %>% 
+  mutate_all(~ replace_na(.x, 0)) %>% 
+  select(-`NA`) 
+
 ```
 
+```{r}
+releve = read_csv(here("data/veg/toka_releve.csv")) %>% 
+  clean_names()
+
+woody_cover = releve %>% 
+  filter(vegetation_type == "trees" | vegetation_type == "shrubs") %>% 
+  mutate(year = year(event_date)) %>% 
+  select(point_id, vegetation_type, usda_code, year, percent_cover) %>% 
+  group_by(point_id, year, usda_code) %>% 
+  summarise(percent_cover = sum(percent_cover)) %>% 
+  pivot_wider(id_cols = c(point_id, year), names_from = usda_code, values_from = percent_cover) %>% 
+  mutate_all(~ replace_na(.x, 0))
+
+woody_total = releve %>% 
+  filter(vegetation_type == "trees" | vegetation_type == "shrubs") %>% 
+  mutate(year = year(event_date)) %>% 
+  select(point_id, vegetation_type, usda_code, year, percent_cover) %>% 
+  group_by(point_id, year) %>% 
+  summarise(percent_cover = sum(percent_cover))
+
+tree_cover = releve %>% 
+  filter(vegetation_type == "trees") %>% 
+  mutate(year = year(event_date)) %>% 
+  select(point_id, vegetation_type, usda_code, year, percent_cover) %>% 
+  group_by(point_id, year, usda_code) %>% 
+  summarise(percent_cover = sum(percent_cover)) %>% 
+  pivot_wider(id_cols = c(point_id, year), names_from = usda_code, values_from = percent_cover) %>% 
+  mutate_all(~ replace_na(.x, 0))
+
+tree_total = releve %>% 
+  filter(vegetation_type == "trees") %>% 
+  mutate(year = year(event_date)) %>% 
+  select(point_id, vegetation_type, usda_code, year, percent_cover) %>% 
+  group_by(point_id, year) %>% 
+  summarise(percent_cover = sum(percent_cover))
+  
+
+shrub_cover = releve %>% 
+  filter( vegetation_type == "shrubs") %>% 
+  mutate(year = year(event_date)) %>% 
+  select(point_id, vegetation_type, usda_code, year, percent_cover) %>% 
+  group_by(point_id, year, usda_code) %>% 
+  summarise(percent_cover = sum(percent_cover)) %>% 
+  pivot_wider(id_cols = c(point_id, year), names_from = usda_code, values_from = percent_cover) %>% 
+  mutate_all(~ replace_na(.x, 0))
+
+shrub_total = releve %>% 
+  filter(vegetation_type == "shrub") %>% 
+  mutate(year = year(event_date)) %>% 
+  select(point_id, vegetation_type, usda_code, year, percent_cover) %>% 
+  group_by(point_id, year) %>% 
+  summarise(percent_cover = sum(percent_cover))
+
+```
 
 
 

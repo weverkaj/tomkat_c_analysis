@@ -1,0 +1,194 @@
+---
+title: "Gradient Analysis for soil factors and biota"
+author: "Jacob Weverka"
+date: "8/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(vegan)
+library(here)
+library(janitor)
+```
+
+```{r results="hide"}
+knitr::knit(here("code/soil_data_cleanup.Rmd"))
+knitr::knit(here("code/veg_data_cleanup.Rmd"))
+knitr::knit(here("code/16S_cleanup.Rmd"))
+```
+
+NMS16S  = NMDS of 16S data
+NMS_family = NMDS of bacterial phyla
+
+
+```{r}
+
+change[41:80,3:5] = change[1:40,3:5]
+
+change_data = change %>% 
+  mutate(id = case_when(depth_cm == "10 to 40" ~ paste(point_id, "-40", sep = ""),
+                        depth_cm == "0 to 10" ~ paste(point_id, "-10", sep = ""))
+         ) %>% 
+  column_to_rownames("id") %>% 
+  filter(rownames(.) %in% otu_scores$point_id)
+
+c_change = toka_c_points %>% 
+  filter(rownames(.) %in% otu_scores$point_id)
+
+otu_standard_match = otu_standard %>% 
+  filter(rownames(.) %in% rownames(change_data))
+
+family_standard_match = family_standard %>% 
+  filter(rownames(.) %in% rownames(change_data))
+
+class_standard_match = class_standard %>% 
+  filter(rownames(.) %in% rownames(change_data))
+
+otu_standard3 = otu_standard %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+family_standard3 = family_standard %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+class_standard3 = class_standard %>% 
+  filter(rownames(.) %in% rownames(change_data))
+
+
+```
+
+
+```{r}
+NMS16S = metaMDS(otu_standard_match, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+
+scores_16s = NMS16S$points
+
+```
+
+
+```{r}
+change_mat = change_data %>% 
+  select(c_change, c_2018, depth_cm, c_pc_change, cn_change, n_2018, c_n_ratio, sand, silt, clay)
+
+
+depth_scores = envfit(scores_16s, change_mat, nperm = 999, na.rm = T)
+depth_scores
+
+fam_16_env = envfit(scores_16s, family_standard_match, nperm = 999)
+```
+
+```{r}
+plot(scores_16s)
+plot(depth_scores)
+plot(fam_16_env, col = "red")
+```
+
+
+```{r}
+NMS_family = metaMDS(family_standard_match, distance = "bray", k = 3, maxit = 999, trymax = 500, wascores = TRUE)
+
+scores_family = NMS_family$points
+scores_family_env = NMS_family$species
+
+```
+
+```{r}
+env_family_scores = envfit(scores_family, change_mat, nperm = 999, na.rm = TRUE)
+
+env_family_scores
+```
+
+```{r}
+plot(scores_family, ylim = c(-0.5, 0.5), xlim = c(-0.5, 0.5))
+plot(env_family_scores)
+text(scores_family_env, col = "red", labels = rownames(scores_family_env))
+```
+
+```{r}
+f = cca(class_standard3 ~ change18 + change21, data = c_change)
+summary(f)
+```
+
+PERMANOVA 
+
+```{r}
+perm_otu = adonis2(otu_standard3 ~ change18 + change21, data = c_change, distance = "bray")
+perm_otu
+```
+
+```{r}
+perm_fam = adonis2(family_standard3 ~ change18 + change21, data = c_change, distance = "bray")
+(perm_fam)
+```
+```{r}
+perm_class = adonis(class_standard3 ~ change18 + change21, data = c_change, distance = "bray")
+perm_class
+```
+
+
+
+```{r}
+change_mat10 = change %>% 
+  filter(depth_cm == "0 to 10") %>% 
+  column_to_rownames("point_id") %>% 
+  filter(rownames(.) %in% canopy_sum$point_id) %>% 
+  select(c_change, c_2018, c_pc_change, cn_change, n_2018, c_n_ratio, sand, silt, clay)
+
+change_mat40 = change %>% 
+  filter(depth_cm == "10 to 40") %>% 
+  column_to_rownames("point_id") %>% 
+  filter(rownames(.) %in% canopy_sum$point_id) %>% 
+  select(c_change, c_2018, c_pc_change, cn_change, n_2018, c_n_ratio, sand, silt, clay)
+  
+
+
+canopy_mat = canopy_sum %>% 
+  column_to_rownames("point_id") %>% 
+  select(-year) %>% 
+  mutate(DIAU = DIAU + DIAUA) %>% 
+  select(-DIAUA)%>% 
+  filter(rownames(.) %in% rownames(change_mat10))
+
+
+nms_canopy = metaMDS(canopy_mat, distance = "bray", k = 3, maxit = 999, trymax = 500)
+
+scores_canopy = nms_canopy$species
+scores_canopy_points = nms_canopy$points
+
+canopy_env_scores = envfit(scores_canopy_points, change_mat10, nperm = 999, na.rm = TRUE)
+canopy_env_scores
+
+canopy_env_scores40 = envfit(scores_canopy_points, change_mat40, nperm = 999, na.rm = TRUE)
+
+
+```
+
+```{r}
+plot(nms_canopy)
+plot(canopy_env_scores)
+text(scores_canopy, labels = rownames(scores_canopy))
+```
+
+```{r}
+canopy_cca = cca(class_standard3 ~ change18 + change21, data = change_mat10)
+
+```
+
+
+
+```{r}
+c_change_canopy = c_change %>% 
+  left_join(canopy_cover, by = c("point_name" = "point_id"))
+
+m = lm(percent_cover ~ change18 + change21, data = c_change_canopy)
+summary(m)
+
+m1 = lm(percent_cover ~ `2015` + `2018` + `2021`, data = c_change_canopy)
+summary(m1)
+
+  cor(c_change_canopy$change21, c_change_canopy$`2021`)
+
+```
+
