@@ -15,7 +15,8 @@ library(janitor)
 
 ```{r message = FALSE}
 
-otu_table = read_table2(here("data/16S/table-w-taxonomy.txt"), skip = 1)
+otu_table = read_table2(here("data/16S/table-w-taxonomy.txt"), skip = 1) %>% 
+  select(-`TOKA-099-10`)
 braycurtis = read_tsv(here("data/16S/braycurtis.tsv"))
 jaccard = read_tsv(here("data/16S/jaccard.tsv"))
 shannon = read_tsv(here("data/16S/shannon.tsv"))
@@ -79,34 +80,34 @@ class_standard = class_table %>%
 
 
 ```{r}
-
-bc = vegdist(otu_standard, method = "bray") %>% 
-  as.matrix(labels = T)
-bcns = vegdist(otu_straight)
-
-NMS16S = otu_standard %>% 
-  filter(row.names(.) != "TOKA-099-10") %>% 
-  metaMDS( distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
-
-NMS_family = family_standard %>% 
-  filter(row.names(.) != "TOKA-099-10") %>% 
-  metaMDS(distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+# 
+# bc = vegdist(otu_standard, method = "bray") %>% 
+#   as.matrix(labels = T)
+# bcns = vegdist(otu_straight)
+# 
+# NMS16S = otu_standard %>% 
+#   filter(row.names(.) != "TOKA-099-10") %>% 
+#   metaMDS( distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+# 
+# NMS_family = family_standard %>% 
+#   filter(row.names(.) != "TOKA-099-10") %>% 
+#   metaMDS(distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
 
 ```
 
 ```{r}
-stressplot(NMS16S)
+# stressplot(NMS16S)
 ```
 
 ```{r}
 
-otu_scores = scores(NMS16S) %>% 
-  as.data.frame() %>% 
-  rownames_to_column("point_id")
-
-family_scores = scores(NMS_family) %>% 
-  as.data.frame() %>% 
-  rownames_to_column("point_id")
+# otu_scores = scores(NMS16S) %>% 
+#   as.data.frame() %>% 
+#   rownames_to_column("point_id")
+# 
+# family_scores = scores(NMS_family) %>% 
+#   as.data.frame() %>% 
+#   rownames_to_column("point_id")
 
 ```
 

@@ -175,10 +175,9 @@ shrub_total = releve %>%
 my.rda = rda(newveg)
 
 
-
 ```
 ```{r}
-knitr::knit(here("code/soil_data_cleanup.Rmd"))
+# knitr::knit(here("code/soil_data_cleanup.Rmd"))
 ```
 Generate the PCA
 ```{r}
@@ -189,6 +188,22 @@ points_18 = data_18$point_id
 
 new_com_table = data_18 %>% 
   ungroup() %>% 
+  mutate(id = paste(point_id, "10", sep = "-")) %>% 
+  column_to_rownames("id") %>% 
+  select(-point_id, -year) %>% 
+  decostand(method = "normalize")
+
+new_com_table10 = data_18 %>% 
+  ungroup() %>% 
+  mutate(id = paste(point_id, "10", sep = "-")) %>% 
+  column_to_rownames("id") %>% 
+  select(-point_id, -year) %>% 
+  decostand(method = "normalize")
+
+new_com_table40 = data_18 %>% 
+  ungroup() %>% 
+  mutate(id = paste(point_id, "40", sep = "-")) %>% 
+  column_to_rownames("id") %>% 
   select(-point_id, -year) %>% 
   decostand(method = "normalize")
 
@@ -235,40 +250,40 @@ summary(m_status)
 ```
 
 ```{r}
-cca(new_com_table ~ c_change + c_2018, data = com_surface)
-cca(new_com_table ~ c_change + c_2018, data = com_depth)
-
-ca = cca(new_com_table ~ com_surface$c_change + com_surface$c_2018 + com_depth$c_change + com_depth$c_2018)
-anova(ca)
+# cca(new_com_table ~ c_change + c_2018, data = com_surface)
+# cca(new_com_table ~ c_change + c_2018, data = com_depth)
+# 
+# ca = cca(new_com_table ~ com_surface$c_change + com_surface$c_2018 + com_depth$c_change + com_depth$c_2018)
+# anova(ca)
 
 ```
 
 Same question, but with deep soils
 ```{r}
-#including outlier - change
-m_change = lm(c_change ~ PC1 + PC2 + PC3, data = com_depth)
-summary(m_change)
-plot(m_change)
-
-#including outlier - status
-m_status = lm(c_2018 ~ PC1 + PC2 + PC3, data = com_depth)
-summary(m_status)
-plot(m_status)
+# #including outlier - change
+# m_change = lm(c_change ~ PC1 + PC2 + PC3, data = com_depth)
+# summary(m_change)
+# plot(m_change)
+# 
+# #including outlier - status
+# m_status = lm(c_2018 ~ PC1 + PC2 + PC3, data = com_depth)
+# summary(m_status)
+# plot(m_status)
 ```
 
 
 ```{r}
 
-veg_st = decostand(newveg, "total")
-st_PCA = rda(veg_st)
-veg_scores = scores(st_PCA, display = "sites") %>% 
-  as.data.frame() %>% 
-  add_column(points) %>% 
-  left_join(change, by = "point_id")
-
-PCAvect = scores(st_PCA, display = "species") %>% 
-  as.data.frame()
-
+# veg_st = decostand(newveg, "total")
+# st_PCA = rda(veg_st)
+# veg_scores = scores(st_PCA, display = "sites") %>% 
+#   as.data.frame() %>% 
+#   add_column(points) %>% 
+#   left_join(change, by = "point_id")
+# 
+# PCAvect = scores(st_PCA, display = "species") %>% 
+#   as.data.frame()
+# 
 
 
 ```
@@ -284,26 +299,26 @@ surface = veg_scores %>%
 depth = veg_scores %>% 
   filter(depth_cm == "10 to 40")
 
-ggplot(surface, aes(x = PC1, y = PC2)) +
-  geom_point(aes(color = cn_change), size = 2) +
-  geom_segment(data = PCAvect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
-  geom_text(data = PCAvect, aes(x = PC1, y = PC2, label = rownames(PCAvect))) + 
-  scale_color_viridis_c()
-
-ggplot(depth, aes(x = PC1, y = PC2)) +
-  geom_point(aes(color = cn_change), size = 2) +
-  geom_segment(data = PCAvect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
-  geom_text(data = PCAvect, aes(x = PC1, y = PC2, label = rownames(PCAvect))) + 
-  scale_color_brewer(palette = "RdBu") + 
-  scale_color_viridis_c()
+# ggplot(surface, aes(x = PC1, y = PC2)) +
+#   geom_point(aes(color = cn_change), size = 2) +
+#   geom_segment(data = PCAvect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
+#   geom_text(data = PCAvect, aes(x = PC1, y = PC2, label = rownames(PCAvect))) + 
+#   scale_color_viridis_c()
+# 
+# ggplot(depth, aes(x = PC1, y = PC2)) +
+#   geom_point(aes(color = cn_change), size = 2) +
+#   geom_segment(data = PCAvect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
+#   geom_text(data = PCAvect, aes(x = PC1, y = PC2, label = rownames(PCAvect))) + 
+#   scale_color_brewer(palette = "RdBu") + 
+#   scale_color_viridis_c()
 ```
 ```{r}
 
-m1 = lm(c_pc_change ~ PC1 + PC2, data = surface)
-summary(m1)
-
-m2 = lm(c_pc_change ~ PC1 + PC2 + clay, data = depth)
-summary(m2)
+# m1 = lm(c_pc_change ~ PC1 + PC2, data = surface)
+# summary(m1)
+# 
+# m2 = lm(c_pc_change ~ PC1 + PC2 + clay, data = depth)
+# summary(m2)
 ```
 
 

@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(here)
 ```
 
 Read in cleanup from other files
@@ -27,27 +28,54 @@ change_data = change %>%
   mutate(id = case_when(depth_cm == "10 to 40" ~ paste(point_id, "-40", sep = ""),
                         depth_cm == "0 to 10" ~ paste(point_id, "-10", sep = ""))
          ) %>% 
-  column_to_rownames("id") %>% 
-  filter(rownames(.) %in% otu_scores$point_id)
+  filter(id %in% rownames(otu_standard),
+         id != "TOKA-099-10") %>% 
+  column_to_rownames("id")
+
+
 
 change_data10 = change_data %>% 
   filter(depth_cm == "0 to 10") %>% 
-  as.data.frame()
+  as.data.frame() %>% 
+  filter(rownames(.) %in% rownames(new_com_table10))
 
 change_data40 = change_data %>% 
   filter(depth_cm == "10 to 40") %>% 
-  as.data.frame()
+  as.data.frame() %>% 
+  filter(rownames(.) %in% rownames(new_com_table40))
+
+all_change = bind_rows(change_data10, change_data40)
+
+
 
 c_change = toka_c_points %>% 
-  filter(rownames(.) %in% otu_scores$point_id) %>% 
+  filter(rownames(.) %in% rownames(otu_standard)) %>% 
   filter(`2021` != 0)
+
 
 otu_standard_match10 = otu_standard %>% 
   filter(rownames(.) %in% rownames(change_data10)) %>% 
   as.data.frame()
 
-# family_standard_match = family_standard %>% 
-#   filter(rownames(.) %in% rownames(change_data))
+otu_standard_match40 = otu_standard %>% 
+  filter(rownames(.) %in% rownames(change_data40)) %>% 
+  as.data.frame()
+
+otu_standard_match = bind_rows(otu_standard_match10, otu_standard_match40)
+
+family_standard_match10 = family_standard %>%
+  filter(rownames(.) %in% rownames(change_data10))
+
+family_standard_match40 = family_standard %>%
+  filter(rownames(.) %in% rownames(change_data40))
+
+family_standard_match = bind_rows(family_standard_match10, family_standard_match40)
+
+veg_data_match10 = new_com_table10 %>%
+  filter(rownames(.) %in% rownames(change_data10))
+
+veg_data_match40 = new_com_table40 %>%
+  filter(rownames(.) %in% rownames(change_data40))
 # 
 # class_standard_match = class_standard %>% 
 #   filter(rownames(.) %in% rownames(change_data))
@@ -96,22 +124,422 @@ canopy_mat40 = canopy_sum %>%
 z = bind_cols(change_data10, canopy_mat10, otu_standard_match10)
 
 # c_10 = z[,c(6,10)]
-c_10 = z[,c(10)] %>% as.matrix()
-rownames(c_10) = rownames(z)
-colnames(c_10) = "c_2018"
-soil10 = z[,3:5] %>% as.matrix()
-canopy10 = z[13:19] %>% as.matrix()
-otu10 = z[,20:ncol(z)] %>% as.matrix()
+c_10 = z[,c(6, 10)]
+# rownames(c_10) = rownames(z)
+# colnames(c_10) = "c_2018"
+soil10 = z[,3:5]
+canopy10 = z[13:19] #%>% select(-FRCA12, -SALIX, -DIAU, - PSME)
+otu10 = z[,20:ncol(z)] %>% select(where(~ any(. != 0))) # make sure no columns are all 0
+
+c_40 = change_data40 %>% 
+  select(c_2018, c_change)
+
+soil40 = change_data40 %>% 
+  select(sand, silt, clay)
 
 # change_data_vp10 = change_data10 %>% 
 
 ```
 
 
-Variance partitioning c stock for plant and 16s data
+```{r}
+# #remove correlated otu data
+# 
+# explanatory = bind_cols(canopy10, otu10)
+# 
+# otu_cor = cor(explanatory)
+# otu_cor[lower.tri(otu_cor)] <- 0
+# diag(otu_cor) = 0
+# 
+# x = apply(otu_cor, 2, function(x) any(x > 0.7))
+# 
+# # m = otu_cor %>% as.data.frame()
+# 
+# data.new <- explanatory[,!x]
+# 
+# otu10_reduced = data.new[,8:ncol(data.new)]
+
+```
+
+## Analysis
+2 Strategies: First, try to do unconstrained PCA on each data set, keep enough axes such that >= 80% of variation is explained in c stock or c_change. Then use axes in variance partitioning
+
+Second strategy: try constrained pca on each data set, constrain with c_change or c stock
+
+#### Strategy 1
+
+PCOA
 
 ```{r}
-c_stock_10 = varpart(c_10, soil10, canopy10, otu10)
+
+# otudist = vegdist(otu_standard_match, method = "bray")
+# otupcoa = cmdscale(otudist, eig = TRUE, k = 3)
+# otu.var.per = (otupcoa$eig/sum(otupcoa$eig))*100
+# otupcoa
+# otuPCOA_scores = scores(otupcoa, choices = c(1:3)) %>% 
+#   as.data.frame()
+# 
+# otuPCOA_scores40 = otuPCOA_scores %>% 
+#   filter(rownames(.) %in% rownames(otu_standard_match40))
+# 
+# otuPCOA_scores10 = otuPCOA_scores %>% 
+#   filter(rownames(.) %in% rownames(otu_standard_match10))
+# 
+# otu_PCOA_w_data = otuPCOA_scores %>% 
+#   as.data.frame() %>% 
+#   bind_cols(all_change)
+# 
+# ggplot(otu_PCOA_w_data, aes(x = Dim1, y = Dim3, color = depth_cm)) + 
+#   geom_point()
+
+```
+
+```{r}
+# 
+# otu10dist = vegdist(otu10, method = "bray")
+# otu10pcoa = cmdscale(otu10dist, eig = TRUE)
+# otu.var.per = (otu10pcoa$eig/sum(otu10pcoa$eig))*100
+# otu10pcoa
+# otu10_scores = otu10pcoa$vectors[,1:3]
+# 
+# ordiplot (otu10pcoa, display = 'sites', type = 'text')
+
+```
+
+NMDS
+
+```{r}
+
+set.seed(44)
+
+otuNMDS = metaMDS(otu_standard, distance = "bray", k = 2, try = 50, trymax = 100)
+otuNMDS_scores = scores(otuNMDS)
+
+otuNMDS_scores10 = otuNMDS_scores %>%
+  as.data.frame() %>%
+  filter(rownames(.) %in% rownames(change_data10))
+
+otuNMDS_scores40 = otuNMDS_scores %>%
+  as.data.frame() %>%
+  filter(rownames(.) %in% rownames(change_data40))
+
+
+
+plot(otuNMDS_scores10$NMDS1, otuNMDS_scores10$NMDS2, xlim = c(-1, 1), ylim = c(-1, 1))
+points(otuNMDS_scores40$NMDS1, otuNMDS_scores40$NMDS2, col = "red")
+
+```
+
+
+
+
+```{r}
+
+# familydist = vegdist(family_standard_match, method = "bray")
+# familypcoa = cmdscale(familydist, eig = TRUE, k = 3)
+# family.var.per = (familypcoa$eig/sum(familypcoa$eig))*100
+# familypcoa
+# familyPCOA_scores = scores(familypcoa, choices = c(1:3)) %>% 
+#   as.data.frame()
+# 
+# familyPCOA_scores40 = familyPCOA_scores %>% 
+#   filter(rownames(.) %in% rownames(family_standard_match40))
+# 
+# familyPCOA_scores10 = familyPCOA_scores %>% 
+#   filter(rownames(.) %in% rownames(family_standard_match10))
+# 
+# 
+# family_PCOA_w_data = familyPCOA_scores %>% 
+#   as.data.frame() %>% 
+#   bind_cols(all_change)
+# 
+# ggplot(family_PCOA_w_data, aes(x = Dim1, y = Dim2, color = depth_cm)) + 
+#   geom_point()
+
+```
+
+```{r}
+
+phylumNMDS = metaMDS(family_standard, distance = "bray", k = 2, try = 50, trymax = 100)
+phylumNMDS_scores = scores(phylumNMDS)
+
+phylumNMDS_scores10 = phylumNMDS_scores %>%
+  as.data.frame() %>%
+  filter(rownames(.) %in% rownames(change_data10))
+
+phylumNMDS_scores40 = phylumNMDS_scores %>%
+  as.data.frame() %>%
+  filter(rownames(.) %in% rownames(change_data40))
+
+
+plot(phylumNMDS_scores10$NMDS1, phylumNMDS_scores10$NMDS2, xlim = c(-1, 1), ylim = c(-1, 1))
+points(phylumNMDS_scores40$NMDS1, phylumNMDS_scores40$NMDS2, col = "red")
+
+
+```
+
+```{r}
+# canopydist = vegdist(canopy_mat40, method = "bray")
+# canopypcoa = cmdscale(canopydist, eig = TRUE, k = 6)
+# canopy.var.per = (canopypcoa$eig/sum(canopypcoa$eig))*100
+# canopypcoa
+# 
+# canopy40PCOA_scores = scores(canopypcoa, choices = c(1:6)) %>% 
+#   as.data.frame()
+# 
+# canopy10PCOA_scores = canopy40PCOA_scores %>% 
+#   rownames_to_column() %>% 
+#   mutate(rowname = str_replace(rowname, "-40", "-10")) %>% 
+#   column_to_rownames("rowname") %>% 
+#   filter(rownames(.) %in% rownames(canopy_mat10))
+# 
+
+
+```
+
+
+```{r}
+
+canopyNMDS40 = metaMDS(canopy_mat40, distance = "bray", k = 2, try = 50, trymax = 100)
+
+canopyNMDS_scores40 = scores(canopyNMDS40) %>% as.data.frame()
+
+canopyNMDS_scores10 = canopyNMDS_scores40  %>%
+  filter(rownames(.) != "TOKA-099-40") %>%
+  rownames_to_column() %>% 
+  mutate(rowname = str_replace(rowname, "-40", "-10")) %>%
+  column_to_rownames("rowname")
+
+
+
+```
+
+```{r}
+# veg_dist = vegdist(veg_data_match40, method = "bray")
+# veg40pcoa = cmdscale(veg_dist, eig = TRUE, k = 6)
+# veg.var.per = (veg40pcoa$eig/sum(veg40pcoa$eig))*100
+# veg40pcoa
+# 
+# veg40PCOA_scores = scores(veg40pcoa, choices = c(1:6)) %>% 
+#   as.data.frame()
+# 
+# veg10PCOA_scores = veg40PCOA_scores %>% 
+#   rownames_to_column() %>% 
+#   mutate(rowname = str_replace(rowname, "-40", "-10")) %>% 
+#   column_to_rownames("rowname") %>% 
+#   filter(rownames(.) %in% rownames(canopy_mat10))
+
+```
+
+
+```{r}
+
+vegNMDS40 = metaMDS(veg_data_match40, distance = "bray", k = 2, try = 50, trymax = 100)
+
+vegNMDS_scores40 = scores(vegNMDS40) %>% as.data.frame()
+
+vegNMDS_scores10 = vegNMDS_scores40 %>%
+  filter(rownames(.) != "TOKA-099-40") %>%
+  rownames_to_column() %>% 
+  mutate(rowname = str_replace(rowname, "-40", "-10")) %>%
+  column_to_rownames("rowname")
+
+
+```
+
+```{r}
+all_veg10 = bind_cols(canopyNMDS_scores10, vegNMDS_scores10)
+all_veg40 = bind_cols(canopyNMDS_scores40, vegNMDS_scores40)
+
+# all_veg10pcoa = bind_cols(canopy10PCOA_scores, veg10PCOA_scores)
+# all_veg40pcoa = bind_cols(canopy40PCOA_scores, veg40PCOA_scores)
+
+```
+
+
+```{r}
+c_stock_10 = varpart(c_10$c_2018, all_veg10, otuNMDS_scores10, soil10)
+# c_stock_10
+
+plot(c_stock_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil Texture" ), cutoff = -0.5)
+
+c_stock_10family = varpart(c_10$c_2018, all_veg10, phylumNMDS_scores10, soil10)
+# c_stock_10
+
+plot(c_stock_10family, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ), cutoff = -0.5)
+
+
+
+```
+
+
+```{r}
+c_stock_10_veg = varpart(c_10$c_2018, canopyNMDS_scores10, vegNMDS_scores10)
+
+plot(c_stock_10_veg)
+```
+
+```{r}
+c_stock_40 = varpart(c_40$c_2018, all_veg40, otuNMDS_scores40, soil40)
+
+c_stock_40family = varpart(c_40$c_2018, all_veg40, phylumNMDS_scores40, soil40)
+# c_stock_40
+
+
+
+plot(c_stock_40,  bg = c("green", "brown", "purple"),  Xnames = c("Plants", "16S", "Soil Texture" ), cutoff = -0.5)
+plot(c_stock_40family,  bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ), cutoff = -0.5)
+
+
+
+```
+
+
+
+
+```{r}
+c_stock_40_veg = varpart(c_40$c_2018, canopyNMDS_scores40, vegNMDS_scores40)
+
+plot(c_stock_40_veg)
+```
+
+```{r}
+c_change_10 = varpart(c_10$c_change, all_veg10, otuNMDS_scores10, soil10)
+# c_stock_10
+
+plot(c_change_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil Texture" ), cutoff = -0.5)
+
+c_change_10family = varpart(c_10$c_change, all_veg10, phylumNMDS_scores10, soil10)
+# c_stock_10
+
+plot(c_change_10family, digits= 2,  bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
+
+
+# showvarparts(3)
+
+
+```
+
+```{r}
+c_change_10_veg = varpart(c_10$c_change, canopyNMDS_scores10, vegNMDS_scores10)
+
+plot(c_change_10_veg)
+```
+
+```{r}
+c_change_40 = varpart(c_40$c_change, all_veg40, otuNMDS_scores40, soil40)
+# c_stock_10
+
+plot(c_change_40, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil Texture" ), cutoff = -0.5)
+
+c_change_40family = varpart(c_40$c_change, all_veg40, phylumNMDS_scores40, soil40)
+# c_stock_10
+
+plot(c_change_40family, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
+
+
+```
+
+
+```{r}
+c_change_40_veg = varpart(c_40$c_change, canopyNMDS_scores40, vegNMDS_scores40)
+
+plot(c_change_40_veg)
+```
+
+```{r}
+otu_scores_change10 = otuNMDS_scores10 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+otu_scores_change40 = otuNMDS_scores40 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+c_change_surface = c_change %>% 
+  filter(rownames(.) %in% rownames(otu_scores_change10))
+
+c_change_deep = c_change %>% 
+  filter(rownames(.) %in% rownames(otu_scores_change40))
+
+phylum_scores_change10 = phylumNMDS_scores10 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+phylum_scores_change40 = phylumNMDS_scores40 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+veg_scores_change10 = vegNMDS_scores10 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+veg_scores_change40 = vegNMDS_scores40 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+canopy_scores_change10 = canopyNMDS_scores10 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+canopy_scores_change40 = canopyNMDS_scores40 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+all_veg_scores_change10 = veg_scores_change10 %>% 
+  bind_cols(canopy_scores_change10)
+
+all_veg_scores_change40 = veg_scores_change40 %>% 
+  bind_cols(canopy_scores_change40)
+
+soil40_change = soil40 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+soil10_change = soil10 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+```
+
+```{r}
+
+c_change_40_21 = varpart(c_change_deep$change21, all_veg_scores_change40, otu_scores_change40, soil40_change)
+# c_stock_10
+plot(c_change_40_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil" ), cutoff = -1)
+
+c_change_40family_21 = varpart(c_change_deep$change21, all_veg_scores_change40, phylum_scores_change40, soil40_change)
+# c_stock_10
+plot(c_change_40family_21, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
+
+```
+```{r}
+c_change_40_21_veg = varpart(c_change_deep$change21, veg_scores_change40, canopy_scores_change40)
+
+plot(c_change_40_21_veg)
+```
+
+
+
+```{r}
+
+c_change_10_21 = varpart(c_change_surface$change21, veg_scores_change10, otu_scores_change10, soil10_change)
+# c_stock_10
+plot(c_change_10_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil Texture" ), cutoff = -1)
+
+
+c_change_10family_21 = varpart(c_change_surface$change21, veg_scores_change10, phylum_scores_change10, soil10_change)
+# c_stock_10
+plot(c_change_10family_21, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
+
+```
+
+```{r}
+otu_data10 = bind_cols(c_10, otuNMDS_scores10)
+otu_model_10 = lm(c_2018 ~ NMDS1 + NMDS2 + NMDS3, data = otu_data10)
+summary(otu_model_10)
+
+
+
+otu_data40 = bind_cols(c_40, otuNMDS_scores40)
+otu_model_40 = lm(c_2018 ~ NMDS1 + NMDS2 + NMDS3, data = otu_data40)
+summary(otu_model_40)
+
+```
+Veg only    
+
+```{r}
+
 
 
 ```

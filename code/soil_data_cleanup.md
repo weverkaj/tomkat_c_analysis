@@ -118,7 +118,7 @@ data_rmn_raw = read_csv(here("data/soil/toka_soil_surveys.csv"))
 
 ```
 ## 
-## -- Column specification -------------------------------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------------------------
 ## cols(
 ##   .default = col_double(),
 ##   Project = col_character(),
@@ -140,7 +140,7 @@ data_rmn_raw = read_csv(here("data/soil/toka_soil_surveys.csv"))
 ##   `Observation Remarks` = col_character(),
 ##   Status = col_character()
 ## )
-## [36mi[39m Use `spec()` for the full column specifications.
+## i Use `spec()` for the full column specifications.
 ```
 
 
@@ -248,109 +248,33 @@ d = all_data %>%
 change = d %>% 
   select(depth_cm, change) %>% 
   unnest(change)
-
-ggplot(change, aes(x = c_change)) +
-  geom_histogram() +
-  facet_wrap(.~ depth_cm)
+# 
+# ggplot(change, aes(x = c_change)) +
+#   geom_histogram() +
+#   facet_wrap(.~ depth_cm)
+# 
+# ggplot(change, aes(x = n_change)) +
+#   geom_histogram() +
+#   facet_wrap(.~ depth_cm)
+# 
+# ggplot(change, aes(x = cn_change)) +
+#   geom_histogram() +
+#   facet_wrap(.~ depth_cm)
+# 
+# ggplot(change, aes(x = n_change, y = c_change, color = depth_cm)) +
+#   geom_point()
+# 
+# ggplot(change, aes(x = c_pc_change, color = depth_cm)) +
+#   geom_histogram()+
+#   facet_wrap(.~ depth_cm)
+# 
+# ggplot(change, aes(x = c_change, y = cn_change, color = depth_cm)) +
+#   geom_point()
 ```
-
-```
-## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-```
-
-![plot of chunk unnamed-chunk-25](figure/unnamed-chunk-25-1.png)
-
-```r
-ggplot(change, aes(x = n_change)) +
-  geom_histogram() +
-  facet_wrap(.~ depth_cm)
-```
-
-```
-## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-```
-
-```
-## Warning: Removed 22 rows containing non-finite values (stat_bin).
-```
-
-![plot of chunk unnamed-chunk-25](figure/unnamed-chunk-25-2.png)
-
-```r
-ggplot(change, aes(x = cn_change)) +
-  geom_histogram() +
-  facet_wrap(.~ depth_cm)
-```
-
-```
-## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-```
-
-```
-## Warning: Removed 22 rows containing non-finite values (stat_bin).
-```
-
-![plot of chunk unnamed-chunk-25](figure/unnamed-chunk-25-3.png)
-
-```r
-ggplot(change, aes(x = n_change, y = c_change, color = depth_cm)) +
-  geom_point()
-```
-
-```
-## Warning: Removed 22 rows containing missing values (geom_point).
-```
-
-![plot of chunk unnamed-chunk-25](figure/unnamed-chunk-25-4.png)
-
-```r
-ggplot(change, aes(x = c_pc_change, color = depth_cm)) +
-  geom_histogram()+
-  facet_wrap(.~ depth_cm)
-```
-
-```
-## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-```
-
-![plot of chunk unnamed-chunk-25](figure/unnamed-chunk-25-5.png)
-
-```r
-ggplot(change, aes(x = c_change, y = cn_change, color = depth_cm)) +
-  geom_point()
-```
-
-```
-## Warning: Removed 22 rows containing missing values (geom_point).
-```
-
-![plot of chunk unnamed-chunk-25](figure/unnamed-chunk-25-6.png)
 
 
 ```r
-m = lm(c_change ~ n_change, data = change)
-summary(m)
-```
-
-```
-## 
-## Call:
-## lm(formula = c_change ~ n_change, data = change)
-## 
-## Residuals:
-##      Min       1Q   Median       3Q      Max 
-## -0.91484 -0.18474  0.02521  0.21186  0.72739 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(>|t|)    
-## (Intercept) -0.51186    0.04664  -10.98 1.41e-15 ***
-## n_change    15.77670    0.93626   16.85  < 2e-16 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## Residual standard error: 0.3354 on 56 degrees of freedom
-##   (22 observations deleted due to missingness)
-## Multiple R-squared:  0.8353,	Adjusted R-squared:  0.8323 
-## F-statistic: 283.9 on 1 and 56 DF,  p-value: < 2.2e-16
+# m = lm(c_change ~ n_change, data = change)
+# summary(m)
 ```
 
