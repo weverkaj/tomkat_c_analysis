@@ -50,16 +50,16 @@ toka_canopy = read_csv(here("data/veg/toka_lpi.csv")) %>%
   filter(!is.na(soil_surface)) %>% 
   mutate(date = lubridate::ymd(date),
          year = lubridate::year(date)) %>% 
+  filter(year != "2016") %>% 
   select(point_id, point_index, direction, year, starts_with("canopy")) %>% 
   janitor::remove_empty() %>% 
-  filter(year == 2018) %>% 
   pivot_longer(c(starts_with("canopy")))
 
 canopy_cover = toka_canopy %>% 
   filter(name == "canopy1",
-         !is.na(value)) %>% 
-  group_by(point_id, year) %>% 
-  count() %>% 
+         ) %>% #!is.na(value)
+  group_by(point_id, year)%>% 
+  summarise(n = sum(!is.na(value))) %>% 
   left_join(lpi_count, by = c("year", "point_id")) %>% 
   mutate(percent_cover = n.x/n.y) %>% 
   select(point_id, year, percent_cover)
@@ -67,11 +67,11 @@ canopy_cover = toka_canopy %>%
 canopy_sum = toka_canopy %>% 
   group_by(point_id, year) %>% 
   count(value) %>% 
-  filter(!is.na(value)) %>% 
   left_join(lpi_count, by = c("year", "point_id")) %>% 
   mutate(percent_cover = n.x/n.y) %>% 
   pivot_wider(id_cols = c(point_id, year), names_from = value, values_from = percent_cover) %>% 
-  mutate_all(~ replace_na(.x, 0))
+  mutate_all(~ replace_na(.x, 0)) %>% 
+  select(-`NA`)
   
   
   
@@ -82,9 +82,7 @@ lpi_sum = toka_lpi %>%
 com_table = lpi_sum %>% 
   pivot_wider(id_cols = c(point_id, year), names_from = value, values_from = n) %>% 
   mutate_all(~ replace_na(.x, 0)) %>% 
-  select(-`NA`, -L, - WL, - NOPLANT) %>% 
-  filter(point_id != "TOKA-013",
-         point_id != "TOKA-006")
+  select(-`NA`, -L, - WL, - NOPLANT)
 
 load(here("data/veg/CAPlantsv2.RData"))
 
@@ -177,7 +175,7 @@ my.rda = rda(newveg)
 
 ```
 ```{r}
-# knitr::knit(here("code/soil_data_cleanup.Rmd"))
+knitr::knit(here("code/soil_data_cleanup.Rmd"))
 ```
 Generate the PCA
 ```{r}
@@ -226,99 +224,62 @@ com_vect = scores(com.rda, display = "species", choices = c(1,2,3)) %>%
 top_com = com_vect %>% 
   slice_max(n = 10, order_by = mag)
 
-ggplot(z, aes(x = PC1, y = PC2)) +
-  geom_smooth(method = "lm") +
-  geom_point(aes(color = cn_change), size = 3) +
-  geom_segment(data = com_vect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
-  geom_text(data = top_com, aes(x = PC1, y = PC2, label = rownames(top_com)))
+# ggplot(z, aes(x = PC1, y = PC2)) +
+#   geom_smooth(method = "lm") +
+#   geom_point(aes(color = cn_change), size = 3) +
+#   geom_segment(data = com_vect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
+#   geom_text(data = top_com, aes(x = PC1, y = PC2, label = rownames(top_com)))
 ```
 Do PCA axes correlate to C change or to C status in surface soils?
-```{r}
-#drop outlier
-z = com_surface %>% 
-  filter(point_id != "TOKA-089")
-
-#including outlier - change
-m_change = lm(c_change ~ PC1 + PC2 + PC3, data = com_surface)
-summary(m_change)
-plot(m_change)
-
-#including outlier - status
-m_status = lm(c_2018 ~ PC1 + PC2 + PC3, data = com_surface)
-summary(m_status)
-
-```
-
-```{r}
-# cca(new_com_table ~ c_change + c_2018, data = com_surface)
-# cca(new_com_table ~ c_change + c_2018, data = com_depth)
-# 
-# ca = cca(new_com_table ~ com_surface$c_change + com_surface$c_2018 + com_depth$c_change + com_depth$c_2018)
-# anova(ca)
-
-```
-
-Same question, but with deep soils
-```{r}
-# #including outlier - change
-# m_change = lm(c_change ~ PC1 + PC2 + PC3, data = com_depth)
-# summary(m_change)
-# plot(m_change)
-# 
-# #including outlier - status
-# m_status = lm(c_2018 ~ PC1 + PC2 + PC3, data = com_depth)
-# summary(m_status)
-# plot(m_status)
-```
 
 
 ```{r}
 
-# veg_st = decostand(newveg, "total")
-# st_PCA = rda(veg_st)
-# veg_scores = scores(st_PCA, display = "sites") %>% 
-#   as.data.frame() %>% 
-#   add_column(points) %>% 
-#   left_join(change, by = "point_id")
-# 
-# PCAvect = scores(st_PCA, display = "species") %>% 
-#   as.data.frame()
-# 
+com_change_table = com_table %>% 
+  filter(year == 2018 | year == 2021) %>% 
+  group_by(point_id) %>% 
+  filter(n() > 1) %>% 
+  mutate(id = paste(point_id, year, sep = "-")) %>% 
+  column_to_rownames("id") %>% 
+  ungroup() %>% 
+  select(-point_id, - year) %>% 
+  decostand(method = "total")
 
+year_dist = vegdist(com_change_table, method = "bray") %>% 
+  as.matrix() %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(str_detect(rowname, "2018")) %>% 
+  column_to_rownames("rowname") %>% 
+  select(contains("2021")) %>% 
+  as.matrix()
+
+veg_point_distance = data_frame(distance = diag(year_dist)) %>% 
+  mutate(points = rownames(year_dist))
 
 ```
-
-
-
-
 
 ```{r}
-surface = veg_scores %>% 
-  filter(depth_cm == "0 to 10")
+com_change_table18 = com_table %>% 
+  filter(year == 2018 | year < 2018) %>% 
+  group_by(point_id) %>% 
+  filter(n() > 1) %>% 
+  mutate(id = paste(point_id, year, sep = "-")) %>% 
+  column_to_rownames("id") %>% 
+  ungroup() %>% 
+  select(-point_id, - year) %>% 
+  decostand(method = "total")
 
-depth = veg_scores %>% 
-  filter(depth_cm == "10 to 40")
+year_dist18 = vegdist(com_change_table18, method = "bray") %>% 
+  as.matrix() %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(str_detect(rowname, "2016")) %>% 
+  column_to_rownames("rowname") %>% 
+  select(contains("2018")) %>% 
+  as.matrix()
 
-# ggplot(surface, aes(x = PC1, y = PC2)) +
-#   geom_point(aes(color = cn_change), size = 2) +
-#   geom_segment(data = PCAvect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
-#   geom_text(data = PCAvect, aes(x = PC1, y = PC2, label = rownames(PCAvect))) + 
-#   scale_color_viridis_c()
-# 
-# ggplot(depth, aes(x = PC1, y = PC2)) +
-#   geom_point(aes(color = cn_change), size = 2) +
-#   geom_segment(data = PCAvect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
-#   geom_text(data = PCAvect, aes(x = PC1, y = PC2, label = rownames(PCAvect))) + 
-#   scale_color_brewer(palette = "RdBu") + 
-#   scale_color_viridis_c()
+veg_point_distance18 = data_frame(distance = diag(year_dist18)) %>% 
+  mutate(points = rownames(year_dist18))
 ```
-```{r}
-
-# m1 = lm(c_pc_change ~ PC1 + PC2, data = surface)
-# summary(m1)
-# 
-# m2 = lm(c_pc_change ~ PC1 + PC2 + clay, data = depth)
-# summary(m2)
-```
-
 

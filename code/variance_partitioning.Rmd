@@ -22,7 +22,7 @@ knitr::knit(here("code/16S_cleanup.Rmd"))
 Trim data to intersection of microbial data and change data
 ```{r}
 
-change[41:80,3:5] = change[1:40,3:5]
+change[41:80,5:7] = change[1:40,5:7]
 
 change_data = change %>% 
   mutate(id = case_when(depth_cm == "10 to 40" ~ paste(point_id, "-40", sep = ""),
@@ -94,13 +94,13 @@ change_mat10 = change %>%
   filter(depth_cm == "0 to 10") %>% 
   column_to_rownames("point_id") %>% 
   filter(rownames(.) %in% canopy_sum$point_id) %>% 
-  select(c_change, c_2018, c_pc_change, cn_change, n_2018, c_n_ratio, sand, silt, clay)
+  select(n_change, `2018`, n_2018, cn_change, change18, c_n_ratio, sand, silt, clay)
 
 change_mat40 = change %>% 
   filter(depth_cm == "10 to 40") %>% 
   column_to_rownames("point_id") %>% 
   filter(rownames(.) %in% canopy_sum$point_id) %>% 
-  select(c_change, c_2018, c_pc_change, cn_change, n_2018, c_n_ratio, sand, silt, clay)
+  select(n_change, `2018`, n_2018, cn_change, change18, c_n_ratio, sand, silt, clay)
 
 #clean canopy data and select
 canopy_mat10 = canopy_sum %>% 
@@ -124,15 +124,15 @@ canopy_mat40 = canopy_sum %>%
 z = bind_cols(change_data10, canopy_mat10, otu_standard_match10)
 
 # c_10 = z[,c(6,10)]
-c_10 = z[,c(6, 10)]
+c_10 = z %>% 
+  select(`2018`, change18)
 # rownames(c_10) = rownames(z)
 # colnames(c_10) = "c_2018"
-soil10 = z[,3:5]
-canopy10 = z[13:19] #%>% select(-FRCA12, -SALIX, -DIAU, - PSME)
-otu10 = z[,20:ncol(z)] %>% select(where(~ any(. != 0))) # make sure no columns are all 0
+soil10 = z %>% 
+  select(sand, silt, clay)
 
 c_40 = change_data40 %>% 
-  select(c_2018, c_change)
+  select(`2018`, change18)
 
 soil40 = change_data40 %>% 
   select(sand, silt, clay)
@@ -358,12 +358,12 @@ all_veg40 = bind_cols(canopyNMDS_scores40, vegNMDS_scores40)
 
 
 ```{r}
-c_stock_10 = varpart(c_10$c_2018, all_veg10, otuNMDS_scores10, soil10)
+c_stock_10 = varpart(z$`2018`, all_veg10, otuNMDS_scores10, soil10)
 # c_stock_10
 
 plot(c_stock_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil Texture" ), cutoff = -0.5)
 
-c_stock_10family = varpart(c_10$c_2018, all_veg10, phylumNMDS_scores10, soil10)
+c_stock_10family = varpart(c_10$`2018`, all_veg10, phylumNMDS_scores10, soil10)
 # c_stock_10
 
 plot(c_stock_10family, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ), cutoff = -0.5)
@@ -374,15 +374,15 @@ plot(c_stock_10family, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OT
 
 
 ```{r}
-c_stock_10_veg = varpart(c_10$c_2018, canopyNMDS_scores10, vegNMDS_scores10)
+c_stock_10_veg = varpart(c_10$`2018`, canopyNMDS_scores10, vegNMDS_scores10)
 
 plot(c_stock_10_veg)
 ```
 
 ```{r}
-c_stock_40 = varpart(c_40$c_2018, all_veg40, otuNMDS_scores40, soil40)
+c_stock_40 = varpart(c_40$`2018`, all_veg40, otuNMDS_scores40, soil40)
 
-c_stock_40family = varpart(c_40$c_2018, all_veg40, phylumNMDS_scores40, soil40)
+c_stock_40family = varpart(c_40$`2018`, all_veg40, phylumNMDS_scores40, soil40)
 # c_stock_40
 
 
@@ -398,18 +398,18 @@ plot(c_stock_40family,  bg = c("green", "brown", "purple"), Xnames = c("Veg", "O
 
 
 ```{r}
-c_stock_40_veg = varpart(c_40$c_2018, canopyNMDS_scores40, vegNMDS_scores40)
+c_stock_40_veg = varpart(c_40$`2018`, canopyNMDS_scores40, vegNMDS_scores40)
 
 plot(c_stock_40_veg)
 ```
 
 ```{r}
-c_change_10 = varpart(c_10$c_change, all_veg10, otuNMDS_scores10, soil10)
+c_change_10 = varpart(c_10$change18, all_veg10, otuNMDS_scores10, soil10)
 # c_stock_10
 
 plot(c_change_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil Texture" ), cutoff = -0.5)
 
-c_change_10family = varpart(c_10$c_change, all_veg10, phylumNMDS_scores10, soil10)
+c_change_10family = varpart(c_10$change18, all_veg10, phylumNMDS_scores10, soil10)
 # c_stock_10
 
 plot(c_change_10family, digits= 2,  bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
@@ -421,18 +421,18 @@ plot(c_change_10family, digits= 2,  bg = c("green", "brown", "purple"), Xnames =
 ```
 
 ```{r}
-c_change_10_veg = varpart(c_10$c_change, canopyNMDS_scores10, vegNMDS_scores10)
+c_change_10_veg = varpart(c_10$change18, canopyNMDS_scores10, vegNMDS_scores10)
 
 plot(c_change_10_veg)
 ```
 
 ```{r}
-c_change_40 = varpart(c_40$c_change, all_veg40, otuNMDS_scores40, soil40)
+c_change_40 = varpart(c_40$change18, all_veg40, otuNMDS_scores40, soil40)
 # c_stock_10
 
 plot(c_change_40, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil Texture" ), cutoff = -0.5)
 
-c_change_40family = varpart(c_40$c_change, all_veg40, phylumNMDS_scores40, soil40)
+c_change_40family = varpart(c_40$change18, all_veg40, phylumNMDS_scores40, soil40)
 # c_stock_10
 
 plot(c_change_40family, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
@@ -442,7 +442,7 @@ plot(c_change_40family, bg = c("green", "brown", "purple"), Xnames = c("Veg", "O
 
 
 ```{r}
-c_change_40_veg = varpart(c_40$c_change, canopyNMDS_scores40, vegNMDS_scores40)
+c_change_40_veg = varpart(c_40$change18, canopyNMDS_scores40, vegNMDS_scores40)
 
 plot(c_change_40_veg)
 ```
@@ -525,15 +525,15 @@ plot(c_change_10family_21, bg = c("green", "brown", "purple"), Xnames = c("Veg",
 ```
 
 ```{r}
-otu_data10 = bind_cols(c_10, otuNMDS_scores10)
-otu_model_10 = lm(c_2018 ~ NMDS1 + NMDS2 + NMDS3, data = otu_data10)
-summary(otu_model_10)
-
-
-
-otu_data40 = bind_cols(c_40, otuNMDS_scores40)
-otu_model_40 = lm(c_2018 ~ NMDS1 + NMDS2 + NMDS3, data = otu_data40)
-summary(otu_model_40)
+# otu_data10 = bind_cols(c_10, otuNMDS_scores10)
+# otu_model_10 = lm(c_2018 ~ NMDS1 + NMDS2, data = otu_data10)
+# summary(otu_model_10)
+# 
+# 
+# 
+# otu_data40 = bind_cols(c_40, otuNMDS_scores40)
+# otu_model_40 = lm(c_2018 ~ NMDS1 + NMDS2, data = otu_data40)
+# summary(otu_model_40)
 
 ```
 Veg only    

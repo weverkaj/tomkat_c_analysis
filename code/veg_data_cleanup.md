@@ -40,33 +40,32 @@ lpi_raw = toka_lpi = read_csv(here("data/veg/toka_lpi.csv"))
 
 ```
 ## 
-## -- Column specification -------------------------------------------------------------------------------------------------------------------
+## -- Column specification -----------------------------------------------------------------------------------------------------------
 ## cols(
 ##   .default = col_character(),
 ##   Date = col_date(format = ""),
 ##   `Point Index` = col_double(),
 ##   Direction = col_double(),
 ##   Height = col_double(),
-##   Lower6 = col_logical(),
 ##   Lower7 = col_logical(),
 ##   Lower8 = col_logical(),
 ##   Lower9 = col_logical(),
 ##   Lower10 = col_logical(),
-##   `Thatch Indices Lower` = col_double(),
+##   `Thatch Indices Lower` = col_number(),
 ##   `Thatch Top Layer` = col_double()
 ## )
 ## i Use `spec()` for the full column specifications.
 ```
 
 ```
-## Warning: 35 parsing failures.
-##  row                  col               expected actual                                                                file
-## 1103 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2080 Thatch Indices Lower no trailing characters    2,3 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2082 Thatch Indices Lower no trailing characters    2,3 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2221 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2268 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## .... .................... ...................... ...... ...................................................................
+## Warning: 6 parsing failures.
+##  row    col           expected actual                                                                file
+## 3323 Lower7 1/0/T/F/TRUE/FALSE  GAAP2 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3323 Lower8 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3336 Lower7 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3344 Lower7 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3344 Lower8 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## .... ...... .................. ...... ...................................................................
 ## See problems(...) for more details.
 ```
 
@@ -81,33 +80,32 @@ lpi_count = toka_lpi = read_csv(here("data/veg/toka_lpi.csv")) %>%
 
 ```
 ## 
-## -- Column specification -------------------------------------------------------------------------------------------------------------------
+## -- Column specification -----------------------------------------------------------------------------------------------------------
 ## cols(
 ##   .default = col_character(),
 ##   Date = col_date(format = ""),
 ##   `Point Index` = col_double(),
 ##   Direction = col_double(),
 ##   Height = col_double(),
-##   Lower6 = col_logical(),
 ##   Lower7 = col_logical(),
 ##   Lower8 = col_logical(),
 ##   Lower9 = col_logical(),
 ##   Lower10 = col_logical(),
-##   `Thatch Indices Lower` = col_double(),
+##   `Thatch Indices Lower` = col_number(),
 ##   `Thatch Top Layer` = col_double()
 ## )
 ## i Use `spec()` for the full column specifications.
 ```
 
 ```
-## Warning: 35 parsing failures.
-##  row                  col               expected actual                                                                file
-## 1103 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2080 Thatch Indices Lower no trailing characters    2,3 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2082 Thatch Indices Lower no trailing characters    2,3 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2221 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2268 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## .... .................... ...................... ...... ...................................................................
+## Warning: 6 parsing failures.
+##  row    col           expected actual                                                                file
+## 3323 Lower7 1/0/T/F/TRUE/FALSE  GAAP2 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3323 Lower8 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3336 Lower7 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3344 Lower7 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3344 Lower8 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## .... ...... .................. ...... ...................................................................
 ## See problems(...) for more details.
 ```
 
@@ -125,33 +123,32 @@ toka_lpi = read_csv(here("data/veg/toka_lpi.csv")) %>%
 ```
 ## value for "which" not specified, defaulting to c("rows", "cols")
 ## 
-## -- Column specification -------------------------------------------------------------------------------------------------------------------
+## -- Column specification -----------------------------------------------------------------------------------------------------------
 ## cols(
 ##   .default = col_character(),
 ##   Date = col_date(format = ""),
 ##   `Point Index` = col_double(),
 ##   Direction = col_double(),
 ##   Height = col_double(),
-##   Lower6 = col_logical(),
 ##   Lower7 = col_logical(),
 ##   Lower8 = col_logical(),
 ##   Lower9 = col_logical(),
 ##   Lower10 = col_logical(),
-##   `Thatch Indices Lower` = col_double(),
+##   `Thatch Indices Lower` = col_number(),
 ##   `Thatch Top Layer` = col_double()
 ## )
 ## i Use `spec()` for the full column specifications.
 ```
 
 ```
-## Warning: 35 parsing failures.
-##  row                  col               expected actual                                                                file
-## 1103 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2080 Thatch Indices Lower no trailing characters    2,3 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2082 Thatch Indices Lower no trailing characters    2,3 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2221 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2268 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## .... .................... ...................... ...... ...................................................................
+## Warning: 6 parsing failures.
+##  row    col           expected actual                                                                file
+## 3323 Lower7 1/0/T/F/TRUE/FALSE  GAAP2 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3323 Lower8 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3336 Lower7 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3344 Lower7 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3344 Lower8 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## .... ...... .................. ...... ...................................................................
 ## See problems(...) for more details.
 ```
 
@@ -170,33 +167,32 @@ toka_canopy = read_csv(here("data/veg/toka_lpi.csv")) %>%
 ```
 ## value for "which" not specified, defaulting to c("rows", "cols")
 ## 
-## -- Column specification -------------------------------------------------------------------------------------------------------------------
+## -- Column specification -----------------------------------------------------------------------------------------------------------
 ## cols(
 ##   .default = col_character(),
 ##   Date = col_date(format = ""),
 ##   `Point Index` = col_double(),
 ##   Direction = col_double(),
 ##   Height = col_double(),
-##   Lower6 = col_logical(),
 ##   Lower7 = col_logical(),
 ##   Lower8 = col_logical(),
 ##   Lower9 = col_logical(),
 ##   Lower10 = col_logical(),
-##   `Thatch Indices Lower` = col_double(),
+##   `Thatch Indices Lower` = col_number(),
 ##   `Thatch Top Layer` = col_double()
 ## )
 ## i Use `spec()` for the full column specifications.
 ```
 
 ```
-## Warning: 35 parsing failures.
-##  row                  col               expected actual                                                                file
-## 1103 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2080 Thatch Indices Lower no trailing characters    2,3 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2082 Thatch Indices Lower no trailing characters    2,3 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2221 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 2268 Lower6               1/0/T/F/TRUE/FALSE        L   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## .... .................... ...................... ...... ...................................................................
+## Warning: 6 parsing failures.
+##  row    col           expected actual                                                                file
+## 3323 Lower7 1/0/T/F/TRUE/FALSE  GAAP2 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3323 Lower8 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3336 Lower7 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3344 Lower7 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## 3344 Lower8 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
+## .... ...... .................. ...... ...................................................................
 ## See problems(...) for more details.
 ```
 
@@ -234,9 +230,7 @@ lpi_sum = toka_lpi %>%
 com_table = lpi_sum %>% 
   pivot_wider(id_cols = c(point_id, year), names_from = value, values_from = n) %>% 
   mutate_all(~ replace_na(.x, 0)) %>% 
-  select(-`NA`, -L, - WL, - NOPLANT) %>% 
-  filter(point_id != "TOKA-013",
-         point_id != "TOKA-006")
+  select(-`NA`, -L, - WL, - NOPLANT)
 ```
 
 ```
@@ -290,7 +284,7 @@ releve = read_csv(here("data/veg/toka_releve.csv")) %>%
 
 ```
 ## 
-## -- Column specification -------------------------------------------------------------------------------------------------------------------
+## -- Column specification -----------------------------------------------------------------------------------------------------------
 ## cols(
 ##   `Study Area` = col_character(),
 ##   `Transect Name` = col_character(),
@@ -410,7 +404,22 @@ my.rda = rda(newveg)
 ```
 
 ```r
-# knitr::knit(here("code/soil_data_cleanup.Rmd"))
+knitr::knit(here("code/soil_data_cleanup.Rmd"))
+```
+
+```
+## 
+## 
+## processing file: G:/My Drive/UCSB/Research/tomkat_c_analysis/code/soil_data_cleanup.Rmd
+```
+
+```
+## Error in parse_block(g[-1], g[1], params.src, markdown_mode): Duplicate chunk label 'setup', which has been used for the chunk:
+## knitr::opts_chunk$set(echo = TRUE)
+## library(tidyverse)
+## library(here)
+## library(vegan)
+## library(lubridate)
 ```
 Generate the PCA
 
@@ -460,170 +469,69 @@ com_vect = scores(com.rda, display = "species", choices = c(1,2,3)) %>%
 top_com = com_vect %>% 
   slice_max(n = 10, order_by = mag)
 
-ggplot(z, aes(x = PC1, y = PC2)) +
-  geom_smooth(method = "lm") +
-  geom_point(aes(color = cn_change), size = 3) +
-  geom_segment(data = com_vect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
-  geom_text(data = top_com, aes(x = PC1, y = PC2, label = rownames(top_com)))
+# ggplot(z, aes(x = PC1, y = PC2)) +
+#   geom_smooth(method = "lm") +
+#   geom_point(aes(color = cn_change), size = 3) +
+#   geom_segment(data = com_vect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
+#   geom_text(data = top_com, aes(x = PC1, y = PC2, label = rownames(top_com)))
 ```
-
-```
-## Error in FUN(X[[i]], ...): object 'PC1' not found
-```
-
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png)
 Do PCA axes correlate to C change or to C status in surface soils?
 
-```r
-#drop outlier
-z = com_surface %>% 
-  filter(point_id != "TOKA-089")
 
-#including outlier - change
-m_change = lm(c_change ~ PC1 + PC2 + PC3, data = com_surface)
-summary(m_change)
-```
-
-```
-## 
-## Call:
-## lm(formula = c_change ~ PC1 + PC2 + PC3, data = com_surface)
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -2.9081 -0.2663  0.2188  0.4050  0.9096 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(>|t|)  
-## (Intercept)  -0.3724     0.1479  -2.518   0.0186 *
-## PC1           0.1746     0.3961   0.441   0.6631  
-## PC2           0.7932     0.3961   2.003   0.0562 .
-## PC3          -0.3714     0.3961  -0.938   0.3573  
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## Residual standard error: 0.7963 on 25 degrees of freedom
-## Multiple R-squared:  0.169,	Adjusted R-squared:  0.06927 
-## F-statistic: 1.695 on 3 and 25 DF,  p-value: 0.1937
-```
 
 ```r
-plot(m_change)
-```
+com_change_table = com_table %>% 
+  filter(year == 2018 | year == 2021) %>% 
+  group_by(point_id) %>% 
+  filter(n() > 1) %>% 
+  mutate(id = paste(point_id, year, sep = "-")) %>% 
+  column_to_rownames("id") %>% 
+  ungroup() %>% 
+  select(-point_id, - year) %>% 
+  decostand(method = "total")
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7-1.png)![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7-2.png)![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7-3.png)![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7-4.png)
+year_dist = vegdist(com_change_table, method = "bray") %>% 
+  as.matrix() %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(str_detect(rowname, "2018")) %>% 
+  column_to_rownames("rowname") %>% 
+  select(contains("2021")) %>% 
+  as.matrix()
 
-```r
-#including outlier - status
-m_status = lm(c_2018 ~ PC1 + PC2 + PC3, data = com_surface)
-summary(m_status)
-```
-
-```
-## 
-## Call:
-## lm(formula = c_2018 ~ PC1 + PC2 + PC3, data = com_surface)
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -1.2343 -0.5374 -0.1428  0.2315  3.5881 
-## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(>|t|)    
-## (Intercept)   3.3966     0.1801  18.861 2.68e-16 ***
-## PC1          -0.4610     0.4824  -0.956   0.3484    
-## PC2          -1.2297     0.4824  -2.549   0.0173 *  
-## PC3           0.5596     0.4824   1.160   0.2570    
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## Residual standard error: 0.9698 on 25 degrees of freedom
-## Multiple R-squared:  0.2594,	Adjusted R-squared:  0.1706 
-## F-statistic: 2.919 on 3 and 25 DF,  p-value: 0.05376
+veg_point_distance = data_frame(distance = diag(year_dist)) %>% 
+  mutate(points = rownames(year_dist))
 ```
 
 
 ```r
-# cca(new_com_table ~ c_change + c_2018, data = com_surface)
-# cca(new_com_table ~ c_change + c_2018, data = com_depth)
-# 
-# ca = cca(new_com_table ~ com_surface$c_change + com_surface$c_2018 + com_depth$c_change + com_depth$c_2018)
-# anova(ca)
-```
+com_change_table18 = com_table %>% 
+  filter(year == 2018 | year < 2018) %>% 
+  group_by(point_id) %>% 
+  filter(n() > 1) %>% 
+  mutate(id = paste(point_id, year, sep = "-")) %>% 
+  column_to_rownames("id") %>% 
+  ungroup() %>% 
+  select(-point_id, - year) %>% 
+  decostand(method = "total")
 
-Same question, but with deep soils
+year_dist18 = vegdist(com_change_table18, method = "bray") %>% 
+  as.matrix() %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(str_detect(rowname, "2016")) %>% 
+  column_to_rownames("rowname") %>% 
+  select(contains("2018")) %>% 
+  as.matrix()
 
-```r
-# #including outlier - change
-# m_change = lm(c_change ~ PC1 + PC2 + PC3, data = com_depth)
-# summary(m_change)
-# plot(m_change)
-# 
-# #including outlier - status
-# m_status = lm(c_2018 ~ PC1 + PC2 + PC3, data = com_depth)
-# summary(m_status)
-# plot(m_status)
-```
-
-
-
-```r
-# veg_st = decostand(newveg, "total")
-# st_PCA = rda(veg_st)
-# veg_scores = scores(st_PCA, display = "sites") %>% 
-#   as.data.frame() %>% 
-#   add_column(points) %>% 
-#   left_join(change, by = "point_id")
-# 
-# PCAvect = scores(st_PCA, display = "species") %>% 
-#   as.data.frame()
-# 
-```
-
-
-
-
-
-
-```r
-surface = veg_scores %>% 
-  filter(depth_cm == "0 to 10")
+veg_point_distance18 = data_frame(distance = diag(year_dist18)) %>% 
+  mutate(points = rownames(year_dist))
 ```
 
 ```
-## Error in filter(., depth_cm == "0 to 10"): object 'veg_scores' not found
+## Error: Problem with `mutate()` input `points`.
+## x Input `points` can't be recycled to size 26.
+## i Input `points` is `rownames(year_dist)`.
+## i Input `points` must be size 26 or 1, not 15.
 ```
-
-```r
-depth = veg_scores %>% 
-  filter(depth_cm == "10 to 40")
-```
-
-```
-## Error in filter(., depth_cm == "10 to 40"): object 'veg_scores' not found
-```
-
-```r
-# ggplot(surface, aes(x = PC1, y = PC2)) +
-#   geom_point(aes(color = cn_change), size = 2) +
-#   geom_segment(data = PCAvect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
-#   geom_text(data = PCAvect, aes(x = PC1, y = PC2, label = rownames(PCAvect))) + 
-#   scale_color_viridis_c()
-# 
-# ggplot(depth, aes(x = PC1, y = PC2)) +
-#   geom_point(aes(color = cn_change), size = 2) +
-#   geom_segment(data = PCAvect, aes (x = 0, y = 0, xend = PC1, yend = PC2), arrow = arrow(length = unit(0.2, "cm"))) +
-#   geom_text(data = PCAvect, aes(x = PC1, y = PC2, label = rownames(PCAvect))) + 
-#   scale_color_brewer(palette = "RdBu") + 
-#   scale_color_viridis_c()
-```
-
-```r
-# m1 = lm(c_pc_change ~ PC1 + PC2, data = surface)
-# summary(m1)
-# 
-# m2 = lm(c_pc_change ~ PC1 + PC2 + clay, data = depth)
-# summary(m2)
-```
-
 

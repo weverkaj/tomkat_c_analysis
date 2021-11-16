@@ -45,8 +45,10 @@ soil_grouped = data_rmn_raw %>%
 soil_visits = soil_grouped %>% 
   ungroup() %>% 
   group_by(point_name) %>% 
-  mutate(visit = row_number()) %>% 
-  filter(n() == 3)
+  mutate(visit = row_number()) 
+# 
+# %>% 
+#   filter(n() == 3)
 
 visits_c = soil_visits %>% 
   mutate(carbon_0_10 = map_dbl(data, ~ median(.x$carbon_0_10_cm)),
@@ -61,7 +63,8 @@ points_c_surface = visits_c %>%
   group_by(point_name) %>% 
   mutate(year = lubridate::year(date)) %>% 
   pivot_wider(id_cols = point_name, names_from = year, values_from = carbon_0_10) %>% 
-  mutate(change18 = (`2018`- `2015`),
+  mutate(change18 = case_when(!is.na(`2015`) ~ `2018`- `2015`,
+                              is.na(`2015`) ~ `2018`- `2014`),
          change21 = `2021`- `2018`,
          depth = 10,
          id = paste(point_name, depth, sep = "-"))
@@ -70,8 +73,9 @@ points_c_surface = visits_c %>%
 points_c_depth = visits_c %>% 
   group_by(point_name) %>% 
   mutate(year = lubridate::year(date)) %>% 
-  pivot_wider(id_cols = point_name, names_from = year, values_from = carbon_0_10) %>% 
-  mutate(change18 = `2018`- `2015`,
+  pivot_wider(id_cols = point_name, names_from = year, values_from = carbon_10_40) %>% 
+  mutate(change18 = case_when(!is.na(`2015`) ~ `2018`- `2015`,
+                              is.na(`2015`) ~ `2018`- `2014`),
          change21 = `2021`- `2018`,
          depth = 40,
          id = paste(point_name, depth, sep = "-"))
@@ -118,19 +122,45 @@ d = all_data %>%
                          mutate(cn = total_org_carbon/nitrogen))
          ) %>% 
   mutate(change = map2(`2018`, `2015`, ~ .x %>% 
-                         select(point_id, sand, silt, clay) %>% 
-                         mutate(c_change = .x$total_org_carbon - .y$total_org_carbon,
-                                c_pc_change = (.x$total_org_carbon - .y$total_org_carbon)/.y$total_org_carbon,
-                                n_change = .x$nitrogen - .y$nitrogen,
-                                cn_change = .x$cn - .y$cn,
-                                c_2018 = .x$total_org_carbon,
-                                n_2018 = .x$nitrogen,
-                                c_n_ratio = c_2018/n_2018)))
+                         full_join(.y, by = c("point_id"), suffix = c("2018", "2015")) %>% 
+                         select(contains(c("point_id", "sand", "silt", "clay", "total_org", "nitrogen", "cn"))) %>% 
+                          mutate(c_change = total_org_carbon2018 - total_org_carbon2015,
+                                c_pc_change = c_change/total_org_carbon2015,
+                                n_change = nitrogen2018 - nitrogen2015,
+                                cn_change = cn2018 - cn2015,
+                                c_2018 = total_org_carbon2018,
+                                n_2018 = nitrogen2018,
+                                c_n_ratio = c_2018/n_2018,
+                                sand = sand2018,
+                                silt = silt2018,
+                                clay = clay2018
+                                ) %>% 
+                         select(point_id, n_change, n_2018, sand, silt, clay, contains("nitrogen")) 
+                         )
+         )
+                       
+                         
+                         
+                         
+                         # 
+                         # mutate(c_change = .x$total_org_carbon - .y$total_org_carbon,
+                         #        c_pc_change = (.x$total_org_carbon - .y$total_org_carbon)/.y$total_org_carbon,
+                         #        n_change = .x$nitrogen - .y$nitrogen,
+                         #        cn_change = .x$cn - .y$cn,
+                         #        c_2018 = .x$total_org_carbon,
+                         #        n_2018 = .x$nitrogen,
+                         #        c_n_ratio = c_2018/n_2018)))
 ```
 ```{r}
 change = d %>% 
   select(depth_cm, change) %>% 
-  unnest(change)
+  unnest(change) %>% 
+  mutate(depth = case_when(depth_cm == "0 to 10" ~ 10,
+                           depth_cm == "10 to 40" ~ 40)) %>% 
+  left_join(toka_c_points, by = c("point_id" = "point_name", "depth")) %>% 
+  mutate(c_n_ratio = `2018`/n_2018,
+         c_n_15 = `2015`/nitrogen2015,
+         cn_change = c_n_ratio - c_n_15)
 # 
 # ggplot(change, aes(x = c_change)) +
 #   geom_histogram() +
