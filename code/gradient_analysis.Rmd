@@ -32,8 +32,9 @@ change_data = change %>%
   mutate(id = case_when(depth_cm == "10 to 40" ~ paste(point_id, "-40", sep = ""),
                         depth_cm == "0 to 10" ~ paste(point_id, "-10", sep = ""))
          ) %>% 
-  filter(id %in% rownames(otu_standard),
-         id != "TOKA-099-10") %>% 
+  # filter(id %in% rownames(otu_standard),
+         # id != "TOKA-099-10"
+         # ) %>% 
   column_to_rownames("id")
 
 
@@ -41,12 +42,14 @@ change_data = change %>%
 change_data10 = change_data %>% 
   filter(depth_cm == "0 to 10") %>% 
   as.data.frame() %>% 
-  filter(rownames(.) %in% rownames(new_com_table10))
+  filter(rownames(.) %in% rownames(new_com_table10)) %>% 
+  filter(rownames(.) %in% rownames(otu_standard))
 
 change_data40 = change_data %>% 
   filter(depth_cm == "10 to 40") %>% 
   as.data.frame() %>% 
-  filter(rownames(.) %in% rownames(new_com_table40))
+  filter(rownames(.) %in% rownames(new_com_table40)) %>% 
+  filter(rownames(.) %in% rownames(otu_standard))
 
 all_change = bind_rows(change_data10, change_data40)
 
@@ -108,6 +111,7 @@ change_mat40 = change %>%
 
 #clean canopy data and select
 canopy_mat10 = canopy_sum %>% 
+  filter(year == 2018) %>% 
   mutate(point_id = paste(point_id, "-10", sep = "")) %>% 
   column_to_rownames("point_id") %>% 
   select(-year) %>% 
@@ -117,6 +121,7 @@ canopy_mat10 = canopy_sum %>%
   as.data.frame()
 
 canopy_mat40 = canopy_sum %>% 
+  filter(year == 2018) %>% 
   mutate(point_id = paste(point_id, "-40", sep = "")) %>% 
   column_to_rownames("point_id") %>% 
   select(-year) %>% 
@@ -147,7 +152,7 @@ soil40 = change_data40 %>%
 
 # Microbe analyses
 
-
+## NMDS all depths
 
 ```{r}
 NMS16S = metaMDS(otu_standard_match, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
@@ -155,7 +160,7 @@ NMS16S = metaMDS(otu_standard_match, distance = "bray", k = 2, maxit = 999, trym
 
 ```
 ```{r}
-library(goeveg)
+
 
 # dimcheckMDS(otu_standard_match, distance = "bray", k = 10, trymax = 20, autotransform = FALSE)
 ```
@@ -163,7 +168,7 @@ library(goeveg)
 
 ```{r}
 
-scores_16s = data.frame(NMS16S$points)
+scores_16s = as.data.frame(scores(NMS16S))
 change_mat = change_data %>% 
   select(change18, `2018`, depth_cm, cn_change, n_2018, c_n_ratio, sand, silt, clay) %>% 
   filter(rownames(.) %in% rownames(scores_16s))
@@ -204,8 +209,33 @@ fam_16_scores = as.data.frame(scores(fam_16_env, display = "vectors")) %>%
   rownames_to_column() %>% 
   mutate(phylum = str_replace(rowname, "p__", ""))
 
-scores_16s = data.frame(NMS16S$points) %>% 
-  cbind(change_mat)
+scores_16s_data = as.data.frame(scores(NMS16S)) %>%
+  rownames_to_column() %>% 
+  left_join(change_mat_complete %>% rownames_to_column(), by = "rowname") %>% 
+  mutate(depth_cm = as.factor(depth_cm))
+
+surface_grp = scores_16s_data[scores_16s_data$depth_cm == "0 to 10",][chull(scores_16s_data[scores_16s_data$depth_cm == "0 to 10", c("NMDS1", "NMDS2")]),]
+
+depth_grp = scores_16s_data[scores_16s_data$depth_cm == "10 to 40",][chull(scores_16s_data[scores_16s_data$depth_cm == "10 to 40", c("NMDS1", "NMDS2")]),]
+
+hull_data = rbind(surface_grp, depth_grp)
+
+NMDS.mean=aggregate(scores_16s_data[,1:2],list(group=scores_16s_data$depth_cm),mean)
+
+
+veganCovEllipse<-function (cov, center = c(0, 0), scale = 1, npoints = 100) 
+{
+  theta <- (0:npoints) * 2 * pi/npoints
+  Circle <- cbind(cos(theta), sin(theta))
+  t(center + scale * t(Circle %*% chol(cov)))
+}
+
+df_ell <- data.frame()
+for(g in levels(scores_16s_data$depth_cm)){
+  df_ell <- rbind(df_ell, cbind(as.data.frame(with(scores_16s_data[scores_16s_data$depth_cm==g,],
+                                                   veganCovEllipse(cov.wt(cbind(NMDS1,NMDS2),wt=rep(1/length(NMDS1),length(NMDS1)))$cov,center=c(mean(NMDS1),mean(NMDS2)))))
+                                ,group=g))
+}
 
 ```
 
@@ -214,28 +244,44 @@ All points
 ```{r}
 library(ggrepel)
 
-ggplot(scores_16s, aes(MDS1, MDS2)) +
+
+ggplot(scores_16s_data, aes(NMDS1, NMDS2)) +
   geom_point(aes(color = depth_cm), size = 4) +
-  scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") +
-  geom_segment(data = depth_scores_plot, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = depth_scores_plot, aes(x = MDS1, y = MDS2, label = variable),
-            size = 6) +
-  geom_text(data = fam_16_scores, mapping = aes(x = MDS1, y = MDS2, label = phylum), color = "red") +
-  theme_bw()
+  # geom_polygon(data = hull_data, aes(x = NMDS1, y = NMDS2, color = depth_cm, fill = depth_cm), alpha = 0.3) +
+  geom_path(data = df_ell, aes(x = NMDS1, y = NMDS2, color = group), size = 1, linetype = 2) +
+  scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") + 
+  scale_fill_manual(values = c("darkgreen", "purple"), name = "Depth") +
+  # geom_label(aes(label = rowname)) +
+  # geom_segment(data = depth_scores_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+               # color = "blue", 
+               # arrow = arrow(length = unit(0.25, "cm"))) +
+  # geom_text(data = depth_scores_plot, aes(x = NMDS1, y = NMDS2, label = variable),
+            # size = 6) +
+  geom_text(data = fam_16_scores, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "black", size = 3) +
+  geom_text(aes(label = paste("stress = ", round(NMS16S$stress, 3)), x = 0.8, y = -.9), size = 4, color = "black") +
+  theme_bw() +
+  xlim(-.9, 1)
 
 ```
+
+PERMANOVA for Depth
 ```{r}
-ggplot(scores_16s, aes(MDS1, MDS2)) +
+bray_16S = vegdist(otu_standard_match, method = "bray")
+
+adonis2(bray_16S ~ depth_cm, scores_16s_data)
+```
+
+
+```{r}
+ggplot(scores_16s_data, aes(NMDS1, NMDS2)) +
   geom_point(aes(color = depth_cm), size = 4) +
   scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") +
-  geom_segment(data = depth_scores_plot_complete, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
+  geom_segment(data = depth_scores_plot_complete, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "blue", 
                arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = depth_scores_plot_complete, aes(x = MDS1, y = MDS2, label = variable),
+  geom_text(data = depth_scores_plot_complete, aes(x = NMDS1, y = NMDS2, label = variable),
             size = 6) +
-  geom_text(data = fam_16_scores, mapping = aes(x = MDS1, y = MDS2, label = phylum), color = "red") +
+  geom_text(data = fam_16_scores, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "red") +
   theme_bw()
 
 ```
@@ -262,40 +308,56 @@ change_mat40_complete = change_mat_complete %>%
   filter(depth_cm == "10 to 40")
 ```
 
-
+## NMDS 16S 10
 ```{r}
+ff = change_mat10_complete %>% filter(`2018` < 7)
+
+otu10_no_outlier = otu_standard_match10 %>% 
+  filter(rownames(.) %in% rownames(ff))
+
+family_no_outlier = family_standard_10 %>% 
+  filter(rownames(.) %in% rownames(ff))
+
+
 NMDS_16S_10 = metaMDS(otu_standard_match10, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
 NMDS_16S_10
 
-scores_16s_10 = data.frame(NMDS_16S_10$points)
+scores_16s_10 = as.data.frame(scores(NMDS_16S_10))
 ```
 
 
 ```{r}
-scores_16s_10 = data.frame(NMDS_16S_10$points)
-depth_scores10 = envfit(scores_16s_10, change_mat10, nperm = 999, na.rm = T)
-depth_scores_plot10 = as.data.frame(scores(depth_scores10, display = "vectors")) %>% 
-  rownames_to_column() %>% 
-   mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
-                              rowname == "2018" ~ "% Organic C",
-                              rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
-                              rowname == "cn_change" ~ "C:N ratio change",
-                              rowname == "n_2018" ~ "% Nitrogen",
-                              rowname == "c_n_ratio" ~ "C:N ratio",
-                              rowname == "change21" ~ "Future % Change",
-                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
+scores_16s_10 = as.data.frame(scores(NMDS_16S_10))
+ff = change_mat10_complete %>% filter(`2018` < 7)
 
-depth_scores10_complete = envfit(scores_16s_10, change_mat10_complete, nperm = 999, na.rm = T)
+
+# scores_16s_10 = scores_16s_10 %>% 
+  # filter(rownames(.)  %in% rownames(ff))
+
+# depth_scores10 = envfit(scores_16s_10, change_mat10, nperm = 999, na.rm = T)
+# depth_scores_plot10 = as.data.frame(scores(depth_scores10, display = "vectors")) %>%
+#   rownames_to_column() %>%
+#    mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
+#                               rowname == "2018" ~ "% Organic C (2018)",
+#                               rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
+#                               rowname == "cn_change" ~ "C:N ratio change",
+#                               rowname == "n_2018" ~ "% Nitrogen",
+#                               rowname == "c_n_ratio" ~ "C:N ratio",
+#                               rowname == "change21" ~ "Future % Change",
+# rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
+
+depth_scores10_complete = envfit(scores_16s_10, change_mat10_complete %>% select(-sand, -silt, -clay), nperm = 999, na.rm = T)
 depth_scores_plot10_complete = as.data.frame(scores(depth_scores10_complete, display = "vectors")) %>% 
   rownames_to_column() %>% 
    mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
-                              rowname == "2018" ~ "% Organic C",
+                              rowname == "2018" ~ "% Organic C (2018)",
                               rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
                               rowname == "cn_change" ~ "C:N ratio change",
                               rowname == "n_2018" ~ "% Nitrogen",
                               rowname == "c_n_ratio" ~ "C:N ratio",
                               rowname == "change21" ~ "Future % Change",
-                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
+                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname)) %>% 
+  filter(rowname == "change18" | rowname == "2018")
 
 # = data.frame(depth_scores$vectors$arrows * sqrt(depth_scores$vectors$r))
 
@@ -305,64 +367,316 @@ family_standard_10 = family_standard_match10 %>%
 fam_16_env10 = envfit(scores_16s_10, family_standard_10, nperm = 999)
 fam_16_scores10 = as.data.frame(scores(fam_16_env10, display = "vectors")) %>% 
   rownames_to_column() %>% 
-  mutate(phylum = str_replace(rowname, "p__", ""))
+  left_join(as.data.frame(fam_16_env10$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>% 
+  # rownames_to_column() %>% 
+  mutate(phylum = str_replace(rowname, "p__", "")) %>% 
+  filter(`fam_16_env10$vectors$pvals` <= 0.05)
 
-scores_16s_10 = data.frame(NMDS_16S_10$points) %>% 
-  cbind(change_mat10)
+scores_16s_10 = as.data.frame(scores(NMDS_16S_10)) %>% 
+  rownames_to_column() %>% 
+  left_join(change_mat10_complete %>% rownames_to_column(), by = "rowname") 
+# %>% 
+#   filter(`2018` < 7)
 ```
 
 ```{r}
-ggplot(scores_16s_10, aes(MDS1, MDS2)) +
+# ggplot(scores_16s_10, aes(NMDS1, NMDS2)) +
+#   geom_point(size = 3) +
+#   geom_segment(data = depth_scores_plot10, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+#                color = "blue", 
+#                arrow = arrow(length = unit(0.25, "cm"))) +
+#   geom_text(data = depth_scores_plot10, aes(x = NMDS1, y = NMDS2, label = variable),
+#             size = 6) +
+#   geom_text(data = fam_16_scores10, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "red") +
+#   theme_bw()
+# 
+
+
+
+
+```
+
+### plot
+```{r}
+ggplot(scores_16s_10, aes(NMDS1, NMDS2, color = `2018`)) +
   geom_point(size = 3) +
-  geom_segment(data = depth_scores_plot10, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
+  geom_segment(data = depth_scores_plot10_complete, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "blue", 
                arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = depth_scores_plot10, aes(x = MDS1, y = MDS2, label = variable),
-            size = 6) +
-  geom_text(data = fam_16_scores10, mapping = aes(x = MDS1, y = MDS2, label = phylum), color = "red") +
+  geom_text(data = depth_scores_plot10_complete, aes(label = variable),
+            size = 4, color = "black") +
+  geom_text(data = fam_16_scores10, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "blue") +
+  scale_color_viridis_c(name = "% Organic C") + 
   theme_bw()
 
+```
+```{r}
+ggplot(scores_16s_10, aes(x = NMDS1, y = `2018`)) +
+  geom_point()
+```
+
+```{r}
+depth_scores10_complete
+
+m = lm(`2018` ~ NMDS1 + NMDS2, data = scores_16s_10)
+summary(m)
 
 
+fam_16_env10
+```
+
+## Phylum analysis
+
+```{r}
+
+depth_key = all_change %>% 
+  select(depth_cm) %>% 
+  rownames_to_column()
+
+fam_carbon_10 = family_standard_10 %>% 
+  rownames_to_column() %>% 
+  left_join(change_mat10_complete %>% select(`2018`, change18) %>% rownames_to_column(), by = "rowname") %>% 
+  column_to_rownames("rowname")
+
+fam_carbon_40 = family_standard_40 %>% 
+  rownames_to_column() %>% 
+  left_join(change_mat40_complete %>% select(`2018`, change18) %>% rownames_to_column(), by = "rowname") %>% 
+  column_to_rownames("rowname")
+
+fam_carbon = family_standard %>% 
+  rownames_to_column() %>% 
+  left_join(change_mat_complete %>% select(`2018`, change18) %>% rownames_to_column(), by = "rowname") %>% 
+  left_join(depth_key, by = "rowname") %>% 
+  column_to_rownames("rowname") %>% 
+  drop_na()
+
+
+
+
+fam_pivot_10 = family_standard_match10 %>% 
+  select_if(colSums(.) != 0) %>%
+  rownames_to_column() %>%
+  pivot_longer(-rowname)
+
+bottom_taxa = family_standard_match %>% 
+  select(-p__Verrucomicrobia, -p__Acidobacteria, -p__Proteobacteria, -p__Bacteroidetes, -p__Planctomycetes, -p__Actinobacteria, -p__Gemmatimonadetes, -p__Firmicutes, -p__Chloroflexi) %>% 
+  mutate(other = rowSums(.)) %>% 
+  rownames_to_column() %>% 
+  select(rowname, other)
+
+top_taxa = family_standard_match %>% 
+  select(p__Verrucomicrobia, p__Acidobacteria, p__Proteobacteria, p__Bacteroidetes, p__Planctomycetes, p__Actinobacteria, p__Gemmatimonadetes, p__Firmicutes, p__Chloroflexi) %>% 
+  rownames_to_column() %>% 
+  left_join(bottom_taxa, by = "rowname")
+
+top_taxa_3 = family_standard_match %>% 
+  select(p__Verrucomicrobia, p__Acidobacteria, p__Proteobacteria, p__Bacteroidetes,  p__Actinobacteria,  p__Gemmatimonadetes) %>% 
+  mutate(total = rowSums(.))
+  
+
+top_taxa_pivot = top_taxa %>%
+  left_join(depth_key, by = "rowname") %>% 
+  mutate(point_id = substr(rowname, 1, nchar(rowname)-3)) %>% 
+  select(-rowname) %>% 
+  pivot_longer(c(-point_id, -depth_cm)) %>% 
+  mutate(phylum = factor(str_replace(name, "p__", ""), levels = rev(c("Verrucomicrobia", "Acidobacteria", "Proteobacteria", "Bacteroidetes", "Planctomycetes", "Actinobacteria", "Gemmatimonadetes", "Firmicutes", "Chloroflexi", "other")) ))
+
+# 
+# levels = c(p__Verrucomicrobia, p__Acidobacteria, p__Proteobacteria, p__Bacteroidetes, p__Planctomycetes, p__Actinobacteria, p__Gemmatimonadetes, p__Firmicutes, p__Chloroflexi)
+
+```
+
+
+```{r}
+library(calecopal)
+
+top_taxa_pivot_10 = top_taxa_pivot %>% 
+  filter(depth_cm == "0 to 10")
+
+top_taxa_pivot_40 = top_taxa_pivot %>% 
+  filter(depth_cm == "10 to 40")
+
+ggplot(top_taxa_pivot, aes(x = point_id, y = value, fill = phylum)) +
+  geom_col() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white")) +
+  facet_grid(depth_cm ~ .) +
+  scale_fill_manual(name = "Phylum", values = rev(cal_palette("superbloom3", n = 10, type = "continuous"))) +
+  xlab("Sample Point") +
+  ylab("Relative Abundance")
 
 
 ```
 ```{r}
-ggplot(scores_16s_10, aes(MDS1, MDS2)) +
-  geom_point(size = 3) +
-  geom_segment(data = depth_scores_plot10_complete, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = depth_scores_plot10_complete, aes(x = MDS1, y = MDS2, label = variable),
-            size = 6) +
-  geom_text(data = fam_16_scores10, mapping = aes(x = MDS1, y = MDS2, label = phylum), color = "red") +
-  theme_bw()
+depth_mod = lm(`2018` ~ depth_cm, data = fam_carbon)
+depth_mod_log = lm(log(`2018`) ~ depth_cm, data = fam_carbon)
 ```
 
 
 ```{r}
+verruco_model = lm((`2018`) ~ p__Verrucomicrobia*depth_cm, data = fam_carbon)
+summary(verruco_model)
+
+
+AIC(verruco_model, depth_mod)
+```
+
+
+```{r}
+acid_model = lm((`2018`) ~ p__Acidobacteria*depth_cm, data = fam_carbon)
+summary(acid_model)
+
+AIC(acid_model, depth_mod)
+```
+
+```{r}
+# proteo_model = lm(`2018` ~ p__Proteobacteria*depth_cm, data = (fam_carbon[!rownames(fam_carbon)%in% c("TOKA-089-40", "TOKA-089-10", "TOKA-064-40", "TOKA-064-10"),]))
+
+proteo_model = lm((`2018`) ~ p__Proteobacteria*depth_cm, data = fam_carbon)
+summary(proteo_model)
+
+plot(proteo_model)
+
+AIC(proteo_model, depth_mod)
+
+ggplot(fam_carbon, aes(y = (`2018`), x = p__Proteobacteria, color = depth_cm)) +
+  geom_point()
+```
+```{r}
+bacteroidetes_model = lm(log(`2018`) ~ p__Bacteroidetes*depth_cm, data = fam_carbon)
+summary(bacteroidetes_model)
+
+AIC(bacteroidetes_model, depth_mod_log)
+```
+```{r}
+plancto_mod = lm(`2018` ~ p__Planctomycetes*depth_cm, data = fam_carbon)
+summary(plancto_mod)
+
+AIC(plancto_mod, depth_mod)
+
+
+```
+
+## Microbe traits
+```{r}
+
+oligotroph = c("Verrucomicrobia", "Acidobacteria")
+copiotroph = c("Proteobacteria", "Bacteroidetes", "Actinobacteria", "Gemmatimonadetes")
+
+fam_carbon_function = fam_carbon %>% 
+  mutate(oligotrophs = p__Verrucomicrobia + p__Acidobacteria,
+         copiotrophs = p__Proteobacteria + p__Bacteroidetes + p__Actinobacteria + p__Gemmatimonadetes,
+         c_o_ratio = copiotrophs/oligotrophs)
+
+fam_carbon_function10 = fam_carbon_function %>% 
+  filter(depth_cm == "0 to 10")
+
+fam_carbon_function40 = fam_carbon_function %>% 
+  filter(depth_cm == "10 to 40")
+
+
+trait_mod10 = lm(`2018` ~ c_o_ratio, data = fam_carbon_function10)
+summary(trait_mod10)
+
+trait_mod40 = lm(`2018` ~ c_o_ratio, data = fam_carbon_function40)
+summary(trait_mod40)
+
+trait_mod = lm(log(`2018`) ~  c_o_ratio*depth_cm, data = fam_carbon_function)
+
+trait_mod1 = lm(log(`2018`) ~  c_o_ratio*depth_cm, data = fam_carbon_function, weights = fam_carbon_function$copiotrophs + fam_carbon_function$oligotrophs)
+summary(trait_mod)
+
+trait_only = lm(log(`2018`) ~  c_o_ratio, data = fam_carbon_function)
+summary(trait_only)
+
+AIC(trait_mod, trait_mod1)
+
+
+
+AIC(depth_mod_log, trait_mod, trait_only)
+
+plot(trait_only)
+
+trait_sum =  fam_carbon_function %>% 
+  group_by(depth_cm) %>% 
+  summarize(mean_c_o = mean(c_o_ratio),
+            mean_C = mean(`2018`))
+
+```
+ggplot(top_taxa_pivot, aes(x = point_id, y = value, fill = phylum)) +
+  geom_col() +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white")) +
+  facet_grid(depth_cm ~ .) +
+  scale_fill_manual(name = "Phylum", values = rev(cal_palette("superbloom3", n = 10, type = "continuous"))) +
+  xlab("Sample Point") +
+  ylab("Relative Abundance")
+
+
+```{r}
+ggplot(fam_carbon_function, (aes(x = c_o_ratio, y = `2018`, color = depth_cm))) +
+  geom_point() +
+  theme_bw() +
+  # facet_grid(. ~ depth_cm) +
+  scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") +
+  theme(axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white")) +
+  geom_smooth(data = fam_carbon_function %>% filter(depth_cm == "0 to 10"), method = "lm", fill = "darkgreen", alpha = 0.1) +
+  ylab("% Organic Carbon") +
+  xlab("Copiotroph:Oligotroph Ratio")
+```
+
+
+## NMDS 16S 40
+
+```{r}
+ff40 = change_mat40_complete %>% filter(`2018` < 5)
+
+otu40_no_outlier = otu_standard_match40 %>% 
+  filter(rownames(.) %in% rownames(ff40))
+
+family_no_outlier40 = family_standard_40 %>% 
+  filter(rownames(.) %in% rownames(ff40))
+
 NMDS_16S_40 = metaMDS(otu_standard_match40, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
 NMDS_16S_40
 
-scores_16s_40 = data.frame(NMDS_16S_40$points)
+# scores_16s_10 = as.data.frame(scores(NMDS_16S_10))
+
+scores_16s_40 = as.data.frame(scores(NMDS_16S_40))
 ```
 
 
 ```{r}
-scores_16s_40 = data.frame(NMDS_16S_40$points)
-depth_scores40 = envfit(scores_16s_40, change_mat40, nperm = 999, na.rm = T)
-depth_scores_plot40 = as.data.frame(scores(depth_scores40, display = "vectors")) %>% 
-  rownames_to_column() %>% 
-  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
-                              rowname == "2018" ~ "% Organic C",
-                              rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
-                              rowname == "cn_change" ~ "C:N ratio change",
-                              rowname == "n_2018" ~ "% Nitrogen",
-                              rowname == "c_n_ratio" ~ "C:N ratio",
-                              rowname == "change21" ~ "Future % Change",
-                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
+scores_16s_40 = as.data.frame(scores(NMDS_16S_40))
+# depth_scores40 = envfit(scores_16s_40, change_mat40, nperm = 999, na.rm = T)
+# depth_scores_plot40 = as.data.frame(scores(depth_scores40, display = "vectors")) %>% 
+#   rownames_to_column() %>% 
+#   mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
+#                               rowname == "2018" ~ "% Organic C",
+#                               rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
+#                               rowname == "cn_change" ~ "C:N ratio change",
+#                               rowname == "n_2018" ~ "% Nitrogen",
+#                               rowname == "c_n_ratio" ~ "C:N ratio",
+#                               rowname == "change21" ~ "Future % Change",
+#                               rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
 
-depth_scores40_complete = envfit(scores_16s_40, change_mat40_complete, nperm = 999, na.rm = T)
+depth_scores40_complete = envfit(scores_16s_40, change_mat40_complete %>% select(-sand, -silt, -clay), nperm = 999, na.rm = T)
 depth_scores_plot40_complete = as.data.frame(scores(depth_scores40_complete, display = "vectors")) %>% 
   rownames_to_column() %>% 
    mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
@@ -381,34 +695,75 @@ family_standard_40 = family_standard_match40 %>%
 fam_16_env40 = envfit(scores_16s_40, family_standard_40, nperm = 999)
 fam_16_scores40 = as.data.frame(scores(fam_16_env40, display = "vectors")) %>% 
   rownames_to_column() %>% 
-  mutate(phylum = str_replace(rowname, "p__", ""))
+  left_join(as.data.frame(fam_16_env40$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>% 
+  mutate(phylum = str_replace(rowname, "p__", "")) %>% 
+  filter(`fam_16_env40$vectors$pvals` <= 0.05)
+# 
+# fam_16_scores10 = as.data.frame(scores(fam_16_env10, display = "vectors")) %>% 
+#   rownames_to_column() %>% 
+#   left_join(as.data.frame(fam_16_env10$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>% 
+#   # rownames_to_column() %>% 
+#   mutate(phylum = str_replace(rowname, "p__", "")) %>% 
+#   filter(`fam_16_env10$vectors$pvals` <= 0.05)
+
+
+scores_16s_40 = as.data.frame(scores(NMDS_16S_40)) %>% 
+  rownames_to_column() %>%
+  left_join(change_mat40_complete %>% rownames_to_column(), by = "rowname")
+
 ```
 
 ```{r}
-ggplot(scores_16s_40, aes(MDS1, MDS2)) +
-  geom_point() +
-  geom_segment(data = depth_scores_plot40, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
+# ggplot(scores_16s_40, aes(MDS1, MDS2)) +
+#   geom_point() +
+#   geom_segment(data = depth_scores_plot40, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
+#                color = "blue", 
+#                arrow = arrow(length = unit(0.25, "cm"))) +
+#   geom_text(data = depth_scores_plot40, aes(x = MDS1, y = MDS2, label = variable),
+#             size = 6) +
+#   geom_text(data = fam_16_scores40, mapping = aes(x = MDS1, y = MDS2, label = phylum), color = "red") +
+#   theme_bw()
+
+```
+
+
+
+ggplot(scores_16s_10, aes(NMDS1, NMDS2, color = `2018`)) +
+  geom_point(size = 3) +
+  geom_segment(data = depth_scores_plot10_complete, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "blue", 
                arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = depth_scores_plot40, aes(x = MDS1, y = MDS2, label = variable),
-            size = 6) +
-  geom_text(data = fam_16_scores40, mapping = aes(x = MDS1, y = MDS2, label = phylum), color = "red") +
+  geom_text(data = depth_scores_plot10_complete, aes(label = variable),
+            size = 4, color = "black") +
+  geom_text(data = fam_16_scores10, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "blue") +
+  scale_color_viridis_c(name = "% Organic C") + 
+  theme_bw()
+
+```{r}
+ggplot(scores_16s_40, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = `2018`), size = 3) +
+  geom_segment(data = depth_scores_plot40_complete, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "blue", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text(data = depth_scores_plot40_complete, aes(x = NMDS1, y = NMDS2, label = variable), color = "blue",
+            size = 4) +
+  geom_text(data = fam_16_scores40, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "red") +
+  scale_color_viridis_c(name = "% Organic C") +
   theme_bw()
 
 ```
 ```{r}
-ggplot(scores_16s_40, aes(MDS1, MDS2)) +
-  geom_point() +
-  geom_segment(data = depth_scores_plot40_complete, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = depth_scores_plot40_complete, aes(x = MDS1, y = MDS2, label = variable),
-            size = 6) +
-  geom_text(data = fam_16_scores40, mapping = aes(x = MDS1, y = MDS2, label = phylum), color = "red") +
-  theme_bw()
+ggplot(scores_16s_40, aes(x = NMDS2, y = `2018`)) +
+  geom_point()
+```
+```{r}
+depth_scores40_complete
+
+m = lm(`2018` ~ NMDS1 + NMDS2, data = scores_16s_40)
+summary(m)
 
 ```
-
+## NMDS Future All
 
 ```{r}
 
@@ -444,6 +799,8 @@ select(depth_cm, change18, change21, `2018`, sand, silt, clay) %>%
 
 NMDS_16S_future = metaMDS(otu_future, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
 
+NMDS_16S_future
+
 ```
 
 
@@ -451,7 +808,7 @@ NMDS_16S_future = metaMDS(otu_future, distance = "bray", k = 2, maxit = 999, try
 ```{r}
 
 
-scores_16s_future = data.frame(NMDS_16S_future$points)
+scores_16s_future = as.data.frame(scores(NMDS_16S_future))
 
 
 depth_scores_future = envfit(scores_16s_future, change_mat_future, nperm = 999, na.rm = T)
@@ -470,8 +827,9 @@ depth_scores_plot_future = as.data.frame(scores(depth_scores_future, display = "
 
 
 
-scores_16s_future = data.frame(NMDS_16S_future$points) %>% 
-  cbind(change_mat_future)
+scores_16s_future = as.data.frame(scores(NMDS_16S_future)) %>% 
+  rownames_to_column() %>% 
+  left_join(change_mat_future %>% rownames_to_column(), by = "rowname")
 
 ```
 
@@ -480,15 +838,15 @@ All points
 ```{r}
 library(ggrepel)
 
-ggplot(scores_16s_future, aes(MDS1, MDS2)) +
+ggplot(scores_16s_future, aes(NMDS1, NMDS2)) +
   geom_point(aes(color = depth_cm), size = 4) +
   scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") +
-  geom_segment(data = depth_scores_plot_future, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
+  geom_segment(data = depth_scores_plot_future, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "blue", 
                arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = depth_scores_plot_future, aes(x = MDS1, y = MDS2, label = variable),
+  geom_text(data = depth_scores_plot_future, aes(x = NMDS1, y = NMDS2, label = variable),
             size = 6) +
-  geom_text(data = fam_16_scores, mapping = aes(x = MDS1, y = MDS2, label = phylum), color = "red") +
+  geom_text(data = fam_16_scores, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "red") +
   theme_bw()
 
 ```
@@ -498,16 +856,182 @@ ggplot(scores_16s_future, aes(MDS1, MDS2)) +
 
 
 
+```{r}
+depth_scores_future
+
+```
 
 
 
+## NMDS Future 10
+
+```{r}
 
 
 
+otu_future10 = otu_future %>% 
+  filter(rownames(.) %in% rownames(otu_standard_match10))
+
+
+```
 
 
 
+```{r}
 
+change_mat_future10 = toka_future_covariates %>% 
+select(depth_cm, change18, change21, `2018`, sand, silt, clay) %>% 
+  filter(rownames(.) %in% rownames(otu_future10))
+
+  
+```
+
+
+```{r}
+
+NMDS_16S_future10 = metaMDS(otu_future10, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+
+NMDS_16S_future10
+
+```
+
+
+
+```{r}
+
+
+scores_16s_future10 = as.data.frame(scores(NMDS_16S_future10))
+
+
+depth_scores_future10 = envfit(scores_16s_future10, change_mat_future10 %>% select(-sand, -silt, -clay, -change18, -`2018`), nperm = 999, na.rm = T)
+depth_scores_plot_future10 = as.data.frame(scores(depth_scores_future10, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
+                              rowname == "2018" ~ "% Organic C",
+                              rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
+                              rowname == "cn_change" ~ "C:N ratio change",
+                              rowname == "n_2018" ~ "% Nitrogen",
+                              rowname == "c_n_ratio" ~ "C:N ratio",
+                              rowname == "change21" ~ "Future % Change",
+                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
+
+# = data.frame(depth_scores$vectors$arrows * sqrt(depth_scores$vectors$r))
+
+
+
+scores_16s_future10 = as.data.frame(scores(NMDS_16S_future10)) %>% 
+  rownames_to_column() %>% 
+  left_join(change_mat_future10 %>% rownames_to_column(), by = "rowname")
+
+```
+
+
+All points
+```{r}
+library(ggrepel)
+
+ggplot(scores_16s_future10, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = change21), size = 4) +
+  # scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") +
+  geom_segment(data = depth_scores_plot_future10, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "blue", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text(data = depth_scores_plot_future10, aes(x = NMDS1, y = NMDS2, label = variable),
+            size = 6) +
+  # geom_text(data = fam_16_scores, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "red") +
+  theme_bw()
+
+```
+```{r}
+depth_scores_future10
+```
+
+
+## NMDS Future 40
+
+
+
+```{r}
+
+
+
+otu_future40 = otu_future %>% 
+  filter(rownames(.) %in% rownames(otu_standard_match40))
+
+
+```
+
+
+
+```{r}
+
+change_mat_future40 = toka_future_covariates %>% 
+select(depth_cm, change18, change21, `2018`, sand, silt, clay) %>% 
+  filter(rownames(.) %in% rownames(otu_future40))
+
+  
+```
+
+
+```{r}
+
+NMDS_16S_future40 = metaMDS(otu_future40, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+
+NMDS_16S_future40
+
+```
+
+
+
+```{r}
+
+
+scores_16s_future40 = as.data.frame(scores(NMDS_16S_future40))
+
+
+depth_scores_future40 = envfit(scores_16s_future40, change_mat_future40 %>% select(-sand, -silt, -clay, -change18, -`2018`), nperm = 999, na.rm = T)
+depth_scores_plot_future40 = as.data.frame(scores(depth_scores_future40, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
+                              rowname == "2018" ~ "% Organic C",
+                              rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
+                              rowname == "cn_change" ~ "C:N ratio change",
+                              rowname == "n_2018" ~ "% Nitrogen",
+                              rowname == "c_n_ratio" ~ "C:N ratio",
+                              rowname == "change21" ~ "Future % Change",
+                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
+
+# = data.frame(depth_scores$vectors$arrows * sqrt(depth_scores$vectors$r))
+
+
+
+scores_16s_future40 = as.data.frame(scores(NMDS_16S_future40)) %>% 
+  rownames_to_column() %>% 
+  left_join(change_mat_future40 %>% rownames_to_column(), by = "rowname")
+
+```
+
+
+All points
+```{r}
+library(ggrepel)
+
+ggplot(scores_16s_future40, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = change21), size = 4) +
+  # scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") +
+  geom_segment(data = depth_scores_plot_future40, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "blue", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text(data = depth_scores_plot_future40, aes(x = NMDS1, y = NMDS2, label = variable),
+            size = 6) +
+  # geom_text(data = fam_16_scores, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "red") +
+  theme_bw()
+
+```
+
+```{r}
+depth_scores_future40
+```
 
 
 
@@ -621,77 +1145,180 @@ soil_veg_match40_future = soil_change %>%
   select(change18, change21, `2018`, sand, silt, clay) %>% 
   filter(!is.na(change21))
 
+soil10 = soil_veg_match10 %>% 
+  rownames_to_column() %>% 
+  mutate(point_id = str_sub(rowname, 1, 8)) %>% 
+  select(point_id, change18, `2018`)
+
+soil40 = soil_veg_match40 %>% 
+  rownames_to_column() %>% 
+  mutate(point_id = str_sub(rowname, 1, 8)) %>% 
+  select(point_id, change18, `2018`)
+
+soil_veg = soil10 %>% 
+  left_join(soil40, by = "point_id", suffix = c("_10", "_40")) %>% 
+  column_to_rownames("point_id")
+
+com_table = com_table10 %>% 
+  rownames_to_column() %>% 
+  mutate(point_id = str_sub(rowname, 1, 8)) %>% 
+  select(-rowname) %>% 
+  column_to_rownames("point_id")
+  
+com_table_fun_all = com_table_fun_standard10 %>% 
+  rownames_to_column() %>% 
+  mutate(point_id = str_sub(rowname, 1, 8)) %>% 
+  select(-rowname) %>% 
+  column_to_rownames("point_id")
 
 ```
 
+
+## Veg all
 ```{r}
 # vegNMDS10 = metaMDS(veg_data_match10, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
 library(goeveg)
 
 # dimcheckMDS(veg_data_match10, distance = "bray", k = 10, trymax = 50, autotransform = FALSE)
 
-vegNMDS10 = metaMDS(com_table10, distance = "bray", k = 3, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
+vegNMDS = metaMDS(com_table, distance = "bray", k = 3, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
 
-veg_scores_10 = vegNMDS10$points
+veg_scores = as.data.frame(scores(vegNMDS))
 
 ```
 
 ```{r}
-soil_veg_scores = envfit(veg_scores_10, soil_veg_match10, nperm = 999, na.rm = T, choices = c(1:3))
+soil_veg_scores = envfit(veg_scores, soil_veg, nperm = 999, na.rm = T, choices = c(1:3))
 soil_veg_scores_plot = as.data.frame(scores(soil_veg_scores, display = "vectors")) %>% 
   rownames_to_column() %>% 
-  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
-                              rowname == "2018" ~ "% Organic C",
-                              rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
-                              rowname == "cn_change" ~ "C:N ratio change",
-                              rowname == "n_2018" ~ "% Nitrogen",
-                              rowname == "c_n_ratio" ~ "C:N ratio",
-                              rowname == "change21" ~ "Future % Change",
-                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
+  mutate(variable = case_when(rowname == "change18_10" ~ "0-10cm % Carbon Change",
+                              rowname == "2018_10" ~ "0-10cm % Organic C",
+                              rowname == "change18_40" ~ "10-40cm % Carbon Change",
+                              rowname == "2018_40" ~ "10-40cm % Organic C"
+                              ),
+         label = case_when(rowname == "change18_10" ~ "A",
+                              rowname == "2018_10" ~ "B",
+                              rowname == "change18_40" ~ "C",
+                              rowname == "2018_40" ~ "D"))
 
 
-fun_grp_scores_10 = envfit(veg_scores_10, com_table_fun_standard10, nperm = 999, choices = c(1:3))
-fun_grp_scores_10_plot = as.data.frame(scores(fun_grp_scores_10, display = "vectors")) %>% 
-  rownames_to_column()
+fun_grp_scores = envfit(veg_scores, com_table_fun_all, nperm = 999, choices = c(1:3))
+fun_grp_scores_plot = as.data.frame(scores(fun_grp_scores, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  left_join(as.data.frame(fun_grp_scores$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>% 
+  filter(`fun_grp_scores$vectors$pvals` < 0.05) %>% 
+  mutate(functional_group = case_when(rowname == "SedgesRushes" ~ "Sedges/Rushes",
+                                      rowname != "SedgesRushes" ~ rowname))
 
-veg_scores_10 = as.data.frame(veg_scores_10)
+  # left_join(as.data.frame(fam_16_env10$vectors$pvals) %>% rownames_to_column(), by = "rowname")
+
+veg_scores = as.data.frame(scores(vegNMDS)) %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg %>% rownames_to_column(), by = "rowname") 
+
+```
+
+
+```{r}
+soil_veg_scores
+fun_grp_scores
+```
+
+
+
+```{r}
+(veg_1_2 = ggplot(veg_scores, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = `2018_10`), size = 3) +
+  geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "black", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS2, label = label),
+            size = 6, box.padding = 0.25) +
+  geom_text_repel(data = fun_grp_scores_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue", size = 6) +
+  scale_color_viridis_c(name = "% Organic C 0-10 cm") + 
+  theme_bw()) +
+  theme(axis.title = element_text(size = 14))
+
+ggsave(here::here("documents/figures/0_10_veg_NMDS_12.png"), dpi = 300, plot = veg_1_2, device = "png", width = 8, height = 6)
+
 
 ```
 
 ```{r}
-ggplot(veg_scores_10, aes(MDS1, MDS2)) +
-  geom_point(size = 4)+
-  geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
-               color = "blue", 
+(veg_1_3 = ggplot(veg_scores, aes(NMDS1, NMDS3)) +
+  geom_point(aes(color = `2018_10`), size = 3)+
+  geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS3), 
+               color = "black", 
                arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = soil_veg_scores_plot, aes(x = MDS1, y = MDS2, label = variable),
-            size = 6) +
-  geom_text(data = fun_grp_scores_10_plot, mapping = aes(x = MDS1, y = MDS2, label = rowname), color = "red") +
-  theme_bw()
+  geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS3, label = label),
+            size = 6, box.padding = 0.25) +
+  geom_text_repel(data = fun_grp_scores_plot, mapping = aes(x = NMDS1, y = NMDS3, label = functional_group), color = "blue", size = 6) +
+  scale_color_viridis_c(name = "% Organic C") +
+  theme_bw())  +
+  theme(axis.title = element_text(size = 14))
+
+ggsave(here::here("documents/figures/0_10_veg_NMDS_13.png"), dpi = 300, plot = veg_1_3, device = "png", width = 8, height = 6)
+```
+```{r}
+library(ggpubr)
+
+(veg_NMDS_all = ggarrange(veg_1_2, veg_1_3, common.legend = TRUE, legend = "right", ncol = 1)  +
+  theme(axis.title = element_text(size = 12)))
+
+ggsave(here::here("documents/figures/veg_NMDS_all.png"), dpi = 300, plot = veg_NMDS_all, device = "png", width = 8, height = 12)
+```
+
+
+
+```{r}
+fun_grp_plot = com_table_fun_standard10 %>% 
+  rownames_to_column() %>% 
+  pivot_longer(-rowname) %>% 
+  mutate(fxn = factor(name, levels = rev(c("Annual Grass", "Perennial Grass", "Annual Forb", "Perennial Forb", "Legumes", "SedgesRushes", "ShrubsTrees"))))
+  
+
+
+ggplot(fun_grp_plot, aes(x = rowname, y = value, fill = fxn)) +
+  geom_col() +
+  scale_fill_manual(name = "Growth Form", values = rev(cal_palette("superbloom3", n = 7, type = "continuous")))
+
+top_species = new_com_table %>% 
+  rownames_to_column() %>% 
+  pivot_longer(-rowname) %>% 
+  group_by(name) %>% 
+  summarise(total = sum(value))
+```
+
+
+```{r}
+soil_veg_scores
+
+veg_mod = lm(`2018` ~ NMDS1 + NMDS2 + NMDS3, data = veg_scores_10)
+summary(veg_mod)
 
 ```
 
 ```{r}
-ggplot(veg_scores_10, aes(MDS1, MDS3)) +
-  geom_point(size = 4) +
-  geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = MDS1, y = 0, yend = MDS3), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = soil_veg_scores_plot, aes(x = MDS1, y = MDS3, label = variable),
-            size = 6) +
-  geom_text(data = fun_grp_scores_10_plot, mapping = aes(x = MDS1, y = MDS3, label = rowname), color = "red") +
-  theme_bw()
 
+fun_table_soil = com_table_fun_standard10 %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg_match10 %>% rownames_to_column(), by = "rowname") %>% 
+  clean_names() %>% 
+  mutate(p_a_grass = perennial_grass/annual_grass)
+
+pg_mod = lm(x2018 ~ p_a_grass, data = fun_table_soil)
+summary(pg_mod)
 ```
+## Veg 40
 
 ```{r}
 vegNMDS40 = metaMDS(com_table40, distance = "bray", k = 3, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
 
-veg_scores_40 = vegNMDS40$points
+veg_scores_40 = as.data.frame(scores(vegNMDS40))
 ```
 
 ```{r}
-soil_veg_scores40 = envfit(veg_scores_40, soil_veg_match40, nperm = 999, na.rm = T, choices = c(1:3))
+soil_veg_scores40 = envfit(veg_scores_40, soil_veg_match40 %>% select(-sand, -silt, -clay), nperm = 999, na.rm = T, choices = c(1:3))
 soil_veg_scores_plot40 = as.data.frame(scores(soil_veg_scores40, display = "vectors")) %>% 
   rownames_to_column() %>% 
   mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
@@ -706,35 +1333,52 @@ soil_veg_scores_plot40 = as.data.frame(scores(soil_veg_scores40, display = "vect
 
 fun_grp_scores_40 = envfit(veg_scores_40, com_table_fun_standard40, nperm = 999, choices = c(1:3))
 fun_grp_scores_40_plot = as.data.frame(scores(fun_grp_scores_40, display = "vectors")) %>% 
-  rownames_to_column()
+  rownames_to_column()%>% 
+  mutate(functional_group = case_when(rowname == "SedgesRushes" ~ "Sedges/Rushes",
+                                      rowname != "SedgesRushes" ~ rowname))
 
-veg_scores_40 = as.data.frame(veg_scores_40)
+veg_scores_40 = as.data.frame(veg_scores_40) %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg_match40 %>% rownames_to_column(), by = "rowname") 
 
+```
+  geom_point(aes(color = `2018`), size = 3)+
+  geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS3), 
+               color = "blue", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS3, label = variable),
+            size = 4) +
+  geom_text(data = fun_grp_scores_10_plot, mapping = aes(x = NMDS1, y = NMDS3, label = rowname), color = "blue") +
+  scale_color_viridis_c(name = "% Organic C") + 
+  theme_bw()
+```{r}
+ggplot(veg_scores_40, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = `2018`), size = 3)+
+  geom_segment(data = soil_veg_scores_plot40, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "black", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text_repel(data = soil_veg_scores_plot40, aes(x = NMDS1, y = NMDS2, label = variable),
+            size = 4) +
+  geom_text(data = fun_grp_scores_40_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue") +
+  scale_color_viridis_c(name = "% Organic C") + 
+  theme_bw()
 ```
 
 ```{r}
-ggplot(veg_scores_40, aes(MDS1, MDS2)) +
-  geom_point(size = 4)+
-  geom_segment(data = soil_veg_scores_plot40, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
-               color = "blue", 
+ggplot(veg_scores_40, aes(NMDS1, NMDS3)) +
+  geom_point(aes(color = `2018`), size = 3)+
+  geom_segment(data = soil_veg_scores_plot40, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS3), 
+               color = "black", 
                arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = soil_veg_scores_plot40, aes(x = MDS1, y = MDS2, label = variable),
-            size = 6) +
-  geom_text(data = fun_grp_scores_40_plot, mapping = aes(x = MDS1, y = MDS2, label = rowname), color = "red") +
+  geom_text_repel(data = soil_veg_scores_plot40, aes(x = NMDS1, y = NMDS3, label = variable),
+            size = 4) +
+  geom_text(data = fun_grp_scores_40_plot, mapping = aes(x = NMDS1, y = NMDS3, label = functional_group), color = "blue") +
+  scale_color_viridis_c(name = "% Organic C") + 
   theme_bw()
 
 ```
-
 ```{r}
-ggplot(veg_scores_40, aes(MDS1, MDS3)) +
-  geom_point(size = 4)+
-  geom_segment(data = soil_veg_scores_plot40, aes(x = 0, xend = MDS1, y = 0, yend = MDS3), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = soil_veg_scores_plot40, aes(x = MDS1, y = MDS3, label = variable),
-            size = 6) +
-  geom_text(data = fun_grp_scores_40_plot, mapping = aes(x = MDS1, y = MDS3, label = rowname), color = "red") +
-  theme_bw()
+soil_veg_scores40
 
 ```
 
@@ -998,4 +1642,49 @@ ggplot(canopy_change_soil, aes(x = canopy_change, y = change21, color = depth_cm
 ```{r}
 plot(ccm)
 ```
+
+
+
+```{r}
+vrda = rda(com_table_fun_standard10)
+summary(vrda)
+
+vrda_scores = as.data.frame(scores(vrda, display = "sites")) %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg_match10 %>% rownames_to_column(), by = "rowname") 
+  
+
+
+vrda_mod = lm(change18 ~ PC1 + PC2, data = vrda_scores)
+summary(vrda_mod)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

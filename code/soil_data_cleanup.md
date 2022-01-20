@@ -27,89 +27,26 @@ data_nut = tibble(files = list.files(here("data/soil"))) %>%
 ```
 
 ```
-## Warning: Problem with `mutate()` input `data`.
-## i 3 parsing failures.
-## row  col expected actual                                                                                        file
-##  25 Sand a double    QNS 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_ 2015_RMN_10-40cm.csv'
-##  25 Silt a double    QNS 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_ 2015_RMN_10-40cm.csv'
-##  25 Clay a double    QNS 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_ 2015_RMN_10-40cm.csv'
-## 
-## i Input `data` is `map(...)`.
+## New names:
+## * `Water Infiltration (T2)` -> `Water Infiltration (T2)...5`
+## * `Water Infiltration (T2)` -> `Water Infiltration (T2)...6`
 ```
 
 ```
-## Warning: Problem with `mutate()` input `data`.
-## i Duplicated column names deduplicated: 'Water Infiltration (T2)' => 'Water Infiltration (T2)_1' [6]
-## i Input `data` is `map(...)`.
+## New names:
+## * `Water Infiltration (T2)` -> `Water Infiltration (T2)...6`
+## * `Water Infiltration (T2)` -> `Water Infiltration (T2)...7`
 ```
 
 ```
-## Warning: Problem with `mutate()` input `data`.
-## i 13 parsing failures.
-## row            col expected  actual                                                                                      file
-##  11 Total Nitrogen a double QNS     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2015_RMN_0-10cm.csv'
-##  14 Sand           a double QNS     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2015_RMN_0-10cm.csv'
-##  14 Silt           a double QNS     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2015_RMN_0-10cm.csv'
-##  14 Clay           a double QNS     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2015_RMN_0-10cm.csv'
-##  19 Sodium         a double < 0.090 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2015_RMN_0-10cm.csv'
-## ... .............. ........ ....... .........................................................................................
-## See problems(...) for more details.
-## 
-## i Input `data` is `map(...)`.
+## Warning: The following named parsers don't match the column names: Total Nitrogen
+
+## Warning: The following named parsers don't match the column names: Total Nitrogen
 ```
 
 ```
-## Warning: Problem with `mutate()` input `data`.
-## i Duplicated column names deduplicated: 'Water Infiltration (T2)' => 'Water Infiltration (T2)_1' [7]
-## i Input `data` is `map(...)`.
-```
-
-```
-## Warning: Problem with `mutate()` input `data`.
-## i The following named parsers don't match the column names: Total Nitrogen
-## i Input `data` is `map(...)`.
-```
-
-```
-## Warning: Problem with `mutate()` input `data`.
-## i 10 parsing failures.
-## row col expected    actual                                                                                      file
-##   1  pH a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2018_RMN_0-10cm.csv'
-##   7  pH a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2018_RMN_0-10cm.csv'
-##  12  pH a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2018_RMN_0-10cm.csv'
-##  14  pH a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2018_RMN_0-10cm.csv'
-##  22  pH a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2018_RMN_0-10cm.csv'
-## ... ... ........ ......... .........................................................................................
-## See problems(...) for more details.
-## 
-## i Input `data` is `map(...)`.
-```
-
-```
-## Warning: Problem with `mutate()` input `data`.
-## i The following named parsers don't match the column names: Total Nitrogen
-## i Input `data` is `map(...)`.
-```
-
-```
-## Warning: Problem with `mutate()` input `data`.
-## i 10 parsing failures.
-## row col expected    actual                                                                                       file
-##   1  pH a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2018_RMN_10-40cm.csv'
-##   7  pH a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2018_RMN_10-40cm.csv'
-##  12  pH a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2018_RMN_10-40cm.csv'
-##  14  pH a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2018_RMN_10-40cm.csv'
-##  22  pH a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/soil//TOKA_RMNData_2018_RMN_10-40cm.csv'
-## ... ... ........ ......... ..........................................................................................
-## See problems(...) for more details.
-## 
-## i Input `data` is `map(...)`.
-```
-
-```
-## Warning: Problem with `mutate()` input `data`.
-## i The following named parsers don't match the column names: Olsen P, Sodium, Total Nitrogen, pH, Sand, Silt, Clay
-## i Input `data` is `map(...)`.
+## Warning: The following named parsers don't match the column names: Olsen P, Sodium, Total Nitrogen,
+## pH, Sand, Silt, Clay
 ```
 
 ```r
@@ -117,30 +54,23 @@ data_rmn_raw = read_csv(here("data/soil/toka_soil_surveys.csv"))
 ```
 
 ```
+## Rows: 490 Columns: 43
+```
+
+```
+## -- Column specification ---------------------------------------------------------------------------
+## Delimiter: ","
+## chr  (10): Project, Study Area, Transect Name, Point Name, Protocol, Catenal Position, Research...
+## dbl  (25): Sample Number, Sample Distance, Sample Bearing, Ring Infiltrometer Diameter, Water V...
+## lgl   (4): Start Time, End Time, Water Infiltration Time 4, Other Observers Names
+## date  (1): Date
+## time  (3): Water Infiltration Time 1, Water Infiltration Time 2, Water Infiltration Time 3
+```
+
+```
 ## 
-## -- Column specification -----------------------------------------------------------------------------------------------------------
-## cols(
-##   .default = col_double(),
-##   Project = col_character(),
-##   `Study Area` = col_character(),
-##   `Transect Name` = col_character(),
-##   `Point Name` = col_character(),
-##   Protocol = col_character(),
-##   Date = col_date(format = ""),
-##   `Start Time` = col_logical(),
-##   `End Time` = col_logical(),
-##   `Catenal Position` = col_character(),
-##   `Water Infiltration Time 1` = col_time(format = ""),
-##   `Water Infiltration Time 2` = col_time(format = ""),
-##   `Water Infiltration Time 3` = col_time(format = ""),
-##   `Water Infiltration Time 4` = col_logical(),
-##   Researcher = col_character(),
-##   `Other Observers Names` = col_logical(),
-##   `Event Remarks` = col_character(),
-##   `Observation Remarks` = col_character(),
-##   Status = col_character()
-## )
-## i Use `spec()` for the full column specifications.
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 ```
 
 
@@ -211,6 +141,16 @@ all_data = data_nut %>%
   ) %>% 
   filter(!is.na(date)) %>% 
   select(files, depth_cm, year, point_id, date, olsen_p, sand, silt, clay, texture, p_h, cec, calcium, magnesium, potassium, sodium, total_org_carbon, total_nitrogen, total_nitrogen_2)
+```
+
+```
+## Warning: One or more parsing issues, see `problems()` for details
+
+## Warning: One or more parsing issues, see `problems()` for details
+
+## Warning: One or more parsing issues, see `problems()` for details
+
+## Warning: One or more parsing issues, see `problems()` for details
 ```
 
 
@@ -299,6 +239,50 @@ change = d %>%
 # 
 # ggplot(change, aes(x = c_change, y = cn_change, color = depth_cm)) +
 #   geom_point()
+```
+
+```r
+change10 = change %>% 
+  filter(depth_cm == "0 to 10")
+
+change40 = change %>% 
+  filter(depth_cm == "10 to 40")
+summary(change40)
+```
+
+```
+##    depth_cm           point_id            n_change           n_2018            sand      
+##  Length:40          Length:40          Min.   :-0.1800   Min.   :0.1400   Min.   :15.00  
+##  Class :character   Class :character   1st Qu.: 0.0100   1st Qu.:0.2100   1st Qu.:22.50  
+##  Mode  :character   Mode  :character   Median : 0.0200   Median :0.2300   Median :28.80  
+##                                        Mean   : 0.0169   Mean   :0.2486   Mean   :32.01  
+##                                        3rd Qu.: 0.0400   3rd Qu.:0.2700   3rd Qu.:36.52  
+##                                        Max.   : 0.0600   Max.   :0.5100   Max.   :60.00  
+##                                        NA's   :11        NA's   :11                      
+##       silt           clay       total_nitrogen  nitrogen2018     nitrogen2015    total_nitrogen_2
+##  Min.   :16.2   Min.   :17.50   Min.   : NA    Min.   :0.1400   Min.   :0.1200   Min.   : NA     
+##  1st Qu.:30.9   1st Qu.:30.90   1st Qu.: NA    1st Qu.:0.2100   1st Qu.:0.1900   1st Qu.: NA     
+##  Median :36.2   Median :33.80   Median : NA    Median :0.2300   Median :0.2200   Median : NA     
+##  Mean   :34.8   Mean   :33.17   Mean   :NaN    Mean   :0.2486   Mean   :0.2238   Mean   :NaN     
+##  3rd Qu.:40.0   3rd Qu.:36.52   3rd Qu.: NA    3rd Qu.:0.2700   3rd Qu.:0.2500   3rd Qu.: NA     
+##  Max.   :45.0   Max.   :53.80   Max.   : NA    Max.   :0.5100   Max.   :0.4800   Max.   : NA     
+##                                 NA's   :40     NA's   :11                        NA's   :40      
+##      depth         2015          2018            2021            2014          change18      
+##  Min.   :40   Min.   :1.4   Min.   :1.400   Min.   :1.300   Min.   :1.700   Min.   :-0.8000  
+##  1st Qu.:40   1st Qu.:2.0   1st Qu.:2.075   1st Qu.:2.000   1st Qu.:1.775   1st Qu.:-0.2250  
+##  Median :40   Median :2.2   Median :2.200   Median :2.200   Median :2.250   Median :-0.1000  
+##  Mean   :40   Mean   :2.4   Mean   :2.335   Mean   :2.167   Mean   :2.275   Mean   :-0.0525  
+##  3rd Qu.:40   3rd Qu.:2.5   3rd Qu.:2.425   3rd Qu.:2.450   3rd Qu.:2.750   3rd Qu.: 0.1250  
+##  Max.   :40   Max.   :5.9   Max.   :5.300   Max.   :2.700   Max.   :2.900   Max.   : 0.6000  
+##               NA's   :4                     NA's   :25      NA's   :36                       
+##     change21          c_n_ratio          c_n_15         cn_change      
+##  Min.   :-0.30000   Min.   : 7.368   Min.   : 7.917   Min.   :-3.3333  
+##  1st Qu.:-0.10000   1st Qu.: 8.400   1st Qu.: 9.579   1st Qu.:-1.7872  
+##  Median : 0.10000   Median : 9.333   Median :10.417   Median :-0.9947  
+##  Mean   : 0.04667   Mean   : 9.675   Mean   :10.536   Mean   :-0.9593  
+##  3rd Qu.: 0.15000   3rd Qu.:10.000   3rd Qu.:11.271   3rd Qu.:-0.6111  
+##  Max.   : 0.40000   Max.   :23.043   Max.   :14.390   Max.   : 8.6532  
+##  NA's   :25         NA's   :11       NA's   :4        NA's   :13
 ```
 
 

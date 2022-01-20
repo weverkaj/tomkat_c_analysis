@@ -185,6 +185,14 @@ change = d %>%
 #   geom_point()
 
 ```
+```{r}
+change10 = change %>% 
+  filter(depth_cm == "0 to 10")
+
+change40 = change %>% 
+  filter(depth_cm == "10 to 40")
+summary(change40)
+```
 
 ```{r}
 # m = lm(c_change ~ n_change, data = change)

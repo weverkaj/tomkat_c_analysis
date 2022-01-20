@@ -16,15 +16,7 @@ veg = read_csv(here("data/veg/TOKA_RMNData_2018_RMN_Plants.csv"), skip = 3, col_
 ```
 
 ```
-## Warning: 10 parsing failures.
-## row         col expected    actual                                                                                    file
-##   1 Annual Forb a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/TOKA_RMNData_2018_RMN_Plants.csv'
-##   7 Annual Forb a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/TOKA_RMNData_2018_RMN_Plants.csv'
-##  12 Annual Forb a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/TOKA_RMNData_2018_RMN_Plants.csv'
-##  14 Annual Forb a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/TOKA_RMNData_2018_RMN_Plants.csv'
-##  22 Annual Forb a double NA: Scrub 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/TOKA_RMNData_2018_RMN_Plants.csv'
-## ... ........... ........ ......... .......................................................................................
-## See problems(...) for more details.
+## Warning: One or more parsing issues, see `problems()` for details
 ```
 
 ```r
@@ -39,34 +31,26 @@ lpi_raw = toka_lpi = read_csv(here("data/veg/toka_lpi.csv"))
 ```
 
 ```
-## 
-## -- Column specification -----------------------------------------------------------------------------------------------------------
-## cols(
-##   .default = col_character(),
-##   Date = col_date(format = ""),
-##   `Point Index` = col_double(),
-##   Direction = col_double(),
-##   Height = col_double(),
-##   Lower7 = col_logical(),
-##   Lower8 = col_logical(),
-##   Lower9 = col_logical(),
-##   Lower10 = col_logical(),
-##   `Thatch Indices Lower` = col_number(),
-##   `Thatch Top Layer` = col_double()
-## )
-## i Use `spec()` for the full column specifications.
+## Warning: One or more parsing issues, see `problems()` for details
 ```
 
 ```
-## Warning: 6 parsing failures.
-##  row    col           expected actual                                                                file
-## 3323 Lower7 1/0/T/F/TRUE/FALSE  GAAP2 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3323 Lower8 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3336 Lower7 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3344 Lower7 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3344 Lower8 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## .... ...... .................. ...... ...................................................................
-## See problems(...) for more details.
+## Rows: 7200 Columns: 24
+```
+
+```
+## -- Column specification ---------------------------------------------------------------------------
+## Delimiter: ","
+## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, L...
+## dbl   (4): Point Index, Direction, Height, Thatch Top Layer
+## lgl   (4): Lower7, Lower8, Lower9, Lower10
+## date  (1): Date
+```
+
+```
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 ```
 
 ```r
@@ -79,34 +63,26 @@ lpi_count = toka_lpi = read_csv(here("data/veg/toka_lpi.csv")) %>%
 ```
 
 ```
-## 
-## -- Column specification -----------------------------------------------------------------------------------------------------------
-## cols(
-##   .default = col_character(),
-##   Date = col_date(format = ""),
-##   `Point Index` = col_double(),
-##   Direction = col_double(),
-##   Height = col_double(),
-##   Lower7 = col_logical(),
-##   Lower8 = col_logical(),
-##   Lower9 = col_logical(),
-##   Lower10 = col_logical(),
-##   `Thatch Indices Lower` = col_number(),
-##   `Thatch Top Layer` = col_double()
-## )
-## i Use `spec()` for the full column specifications.
+## Warning: One or more parsing issues, see `problems()` for details
 ```
 
 ```
-## Warning: 6 parsing failures.
-##  row    col           expected actual                                                                file
-## 3323 Lower7 1/0/T/F/TRUE/FALSE  GAAP2 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3323 Lower8 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3336 Lower7 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3344 Lower7 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3344 Lower8 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## .... ...... .................. ...... ...................................................................
-## See problems(...) for more details.
+## Rows: 7200 Columns: 24
+```
+
+```
+## -- Column specification ---------------------------------------------------------------------------
+## Delimiter: ","
+## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, L...
+## dbl   (4): Point Index, Direction, Height, Thatch Top Layer
+## lgl   (4): Lower7, Lower8, Lower9, Lower10
+## date  (1): Date
+```
+
+```
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 ```
 
 ```r
@@ -122,34 +98,29 @@ toka_lpi = read_csv(here("data/veg/toka_lpi.csv")) %>%
 
 ```
 ## value for "which" not specified, defaulting to c("rows", "cols")
-## 
-## -- Column specification -----------------------------------------------------------------------------------------------------------
-## cols(
-##   .default = col_character(),
-##   Date = col_date(format = ""),
-##   `Point Index` = col_double(),
-##   Direction = col_double(),
-##   Height = col_double(),
-##   Lower7 = col_logical(),
-##   Lower8 = col_logical(),
-##   Lower9 = col_logical(),
-##   Lower10 = col_logical(),
-##   `Thatch Indices Lower` = col_number(),
-##   `Thatch Top Layer` = col_double()
-## )
-## i Use `spec()` for the full column specifications.
 ```
 
 ```
-## Warning: 6 parsing failures.
-##  row    col           expected actual                                                                file
-## 3323 Lower7 1/0/T/F/TRUE/FALSE  GAAP2 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3323 Lower8 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3336 Lower7 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3344 Lower7 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3344 Lower8 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## .... ...... .................. ...... ...................................................................
-## See problems(...) for more details.
+## Warning: One or more parsing issues, see `problems()` for details
+```
+
+```
+## Rows: 7200 Columns: 24
+```
+
+```
+## -- Column specification ---------------------------------------------------------------------------
+## Delimiter: ","
+## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, L...
+## dbl   (4): Point Index, Direction, Height, Thatch Top Layer
+## lgl   (4): Lower7, Lower8, Lower9, Lower10
+## date  (1): Date
+```
+
+```
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 ```
 
 ```r
@@ -158,62 +129,63 @@ toka_canopy = read_csv(here("data/veg/toka_lpi.csv")) %>%
   filter(!is.na(soil_surface)) %>% 
   mutate(date = lubridate::ymd(date),
          year = lubridate::year(date)) %>% 
+  filter(year != "2016") %>% 
   select(point_id, point_index, direction, year, starts_with("canopy")) %>% 
   janitor::remove_empty() %>% 
-  filter(year == 2018) %>% 
   pivot_longer(c(starts_with("canopy")))
 ```
 
 ```
 ## value for "which" not specified, defaulting to c("rows", "cols")
-## 
-## -- Column specification -----------------------------------------------------------------------------------------------------------
-## cols(
-##   .default = col_character(),
-##   Date = col_date(format = ""),
-##   `Point Index` = col_double(),
-##   Direction = col_double(),
-##   Height = col_double(),
-##   Lower7 = col_logical(),
-##   Lower8 = col_logical(),
-##   Lower9 = col_logical(),
-##   Lower10 = col_logical(),
-##   `Thatch Indices Lower` = col_number(),
-##   `Thatch Top Layer` = col_double()
-## )
-## i Use `spec()` for the full column specifications.
 ```
 
 ```
-## Warning: 6 parsing failures.
-##  row    col           expected actual                                                                file
-## 3323 Lower7 1/0/T/F/TRUE/FALSE  GAAP2 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3323 Lower8 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3336 Lower7 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3344 Lower7 1/0/T/F/TRUE/FALSE  2GA   'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## 3344 Lower8 1/0/T/F/TRUE/FALSE  L     'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/veg/toka_lpi.csv'
-## .... ...... .................. ...... ...................................................................
-## See problems(...) for more details.
+## Warning: One or more parsing issues, see `problems()` for details
+```
+
+```
+## Rows: 7200 Columns: 24
+```
+
+```
+## -- Column specification ---------------------------------------------------------------------------
+## Delimiter: ","
+## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, L...
+## dbl   (4): Point Index, Direction, Height, Thatch Top Layer
+## lgl   (4): Lower7, Lower8, Lower9, Lower10
+## date  (1): Date
+```
+
+```
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 ```
 
 ```r
 canopy_cover = toka_canopy %>% 
   filter(name == "canopy1",
-         !is.na(value)) %>% 
-  group_by(point_id, year) %>% 
-  count() %>% 
+         ) %>% #!is.na(value)
+  group_by(point_id, year)%>% 
+  summarise(n = sum(!is.na(value))) %>% 
   left_join(lpi_count, by = c("year", "point_id")) %>% 
   mutate(percent_cover = n.x/n.y) %>% 
   select(point_id, year, percent_cover)
+```
 
+```
+## `summarise()` has grouped output by 'point_id'. You can override using the `.groups` argument.
+```
+
+```r
 canopy_sum = toka_canopy %>% 
   group_by(point_id, year) %>% 
   count(value) %>% 
-  filter(!is.na(value)) %>% 
   left_join(lpi_count, by = c("year", "point_id")) %>% 
   mutate(percent_cover = n.x/n.y) %>% 
   pivot_wider(id_cols = c(point_id, year), names_from = value, values_from = percent_cover) %>% 
-  mutate_all(~ replace_na(.x, 0))
+  mutate_all(~ replace_na(.x, 0)) %>% 
+  select(-`NA`)
 ```
 
 ```
@@ -283,18 +255,21 @@ releve = read_csv(here("data/veg/toka_releve.csv")) %>%
 ```
 
 ```
+## Rows: 1539 Columns: 8
+```
+
+```
+## -- Column specification ---------------------------------------------------------------------------
+## Delimiter: ","
+## chr  (5): Study Area, Transect Name, Point Id, Vegetation Type, USDA Code
+## dbl  (2): Percent Cover, Height
+## date (1): Event Date
+```
+
+```
 ## 
-## -- Column specification -----------------------------------------------------------------------------------------------------------
-## cols(
-##   `Study Area` = col_character(),
-##   `Transect Name` = col_character(),
-##   `Point Id` = col_character(),
-##   `Event Date` = col_date(format = ""),
-##   `Vegetation Type` = col_character(),
-##   `USDA Code` = col_character(),
-##   `Percent Cover` = col_double(),
-##   Height = col_double()
-## )
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 ```
 
 ```r
@@ -427,6 +402,15 @@ Generate the PCA
 data_18 = com_table %>% 
   filter(year == 2018)
 
+data_21 = com_table %>% 
+  filter(year == 2021)
+
+data_16 = com_table %>% 
+  filter(year == 2016)
+
+data_15 = com_table %>% 
+  filter(year == 2014)
+
 points_18 = data_18$point_id
 
 new_com_table = data_18 %>% 
@@ -503,6 +487,13 @@ veg_point_distance = data_frame(distance = diag(year_dist)) %>%
   mutate(points = rownames(year_dist))
 ```
 
+```
+## Warning: `data_frame()` was deprecated in tibble 1.1.0.
+## Please use `tibble()` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
+```
+
 
 ```r
 com_change_table18 = com_table %>% 
@@ -525,13 +516,15 @@ year_dist18 = vegdist(com_change_table18, method = "bray") %>%
   as.matrix()
 
 veg_point_distance18 = data_frame(distance = diag(year_dist18)) %>% 
-  mutate(points = rownames(year_dist))
+  mutate(points = rownames(year_dist18))
 ```
 
-```
-## Error: Problem with `mutate()` input `points`.
-## x Input `points` can't be recycled to size 26.
-## i Input `points` is `rownames(year_dist)`.
-## i Input `points` must be size 26 or 1, not 15.
+
+```r
+top_species = new_com_table %>% 
+  rownames_to_column() %>% 
+  pivot_longer(-rowname) %>% 
+  group_by(name) %>% 
+  summarise(total = sum(value))
 ```
 

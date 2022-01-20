@@ -14,7 +14,12 @@ otu_table = read_table2(here("data/16S/table-w-taxonomy.txt"), skip = 1) %>%
 ```
 
 ```
-## Warning: 1733 parsing failures.
+## Warning: `read_table2()` was deprecated in readr 2.0.0.
+## Please use `read_table()` instead.
+```
+
+```
+## Warning: 1732 parsing failures.
 ## row col   expected     actual                                                                        file
 ##   8  -- 68 columns 66 columns 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/16S/table-w-taxonomy.txt'
 ##  15  -- 68 columns 69 columns 'G:/My Drive/UCSB/Research/tomkat_c_analysis/data/16S/table-w-taxonomy.txt'
@@ -27,26 +32,8 @@ otu_table = read_table2(here("data/16S/table-w-taxonomy.txt"), skip = 1) %>%
 
 ```r
 braycurtis = read_tsv(here("data/16S/braycurtis.tsv"))
-```
-
-```
-## Warning: Missing column names filled in: 'X1' [1]
-```
-
-```r
 jaccard = read_tsv(here("data/16S/jaccard.tsv"))
-```
-
-```
-## Warning: Missing column names filled in: 'X1' [1]
-```
-
-```r
 shannon = read_tsv(here("data/16S/shannon.tsv"))
-```
-
-```
-## Warning: Missing column names filled in: 'X1' [1]
 ```
 
 

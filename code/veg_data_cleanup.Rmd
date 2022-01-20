@@ -182,6 +182,15 @@ Generate the PCA
 data_18 = com_table %>% 
   filter(year == 2018)
 
+data_21 = com_table %>% 
+  filter(year == 2021)
+
+data_16 = com_table %>% 
+  filter(year == 2016)
+
+data_15 = com_table %>% 
+  filter(year == 2014)
+
 points_18 = data_18$point_id
 
 new_com_table = data_18 %>% 
@@ -281,5 +290,13 @@ year_dist18 = vegdist(com_change_table18, method = "bray") %>%
 
 veg_point_distance18 = data_frame(distance = diag(year_dist18)) %>% 
   mutate(points = rownames(year_dist18))
+```
+
+```{r}
+top_species = new_com_table %>% 
+  rownames_to_column() %>% 
+  pivot_longer(-rowname) %>% 
+  group_by(name) %>% 
+  summarise(total = sum(value))
 ```
 
