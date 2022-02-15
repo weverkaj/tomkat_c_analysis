@@ -300,3 +300,22 @@ top_species = new_com_table %>%
   summarise(total = sum(value))
 ```
 
+```{r}
+com_table18_change = data_18 %>% 
+  column_to_rownames("point_id") %>% 
+  select(-year) %>% 
+  decostand(method = "total") %>% 
+  filter(rownames(.) %in% rownames(com_table21_change))
+  
+
+com_table21_change = data_21 %>% 
+  column_to_rownames("point_id") %>% 
+  select(-year) %>% 
+  decostand(method = "total")
+
+veg_change_com = com_table21_change - com_table18_change
+  
+
+
+````
+

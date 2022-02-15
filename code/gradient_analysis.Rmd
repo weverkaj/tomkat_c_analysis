@@ -152,6 +152,56 @@ soil40 = change_data40 %>%
 
 # Microbe analyses
 
+## Diversity
+
+```{r}
+microbe_diversity = diversity(otu_standard_match) %>% 
+  as.data.frame()
+
+colnames(microbe_diversity) = "diversity"
+
+microbe_diversity_soil = microbe_diversity %>% 
+  rownames_to_column() %>% 
+  left_join(soil_change %>% rownames_to_column(), by = "rowname")
+
+
+microbe_diversity_soil10 = microbe_diversity_soil %>% 
+  filter(depth_cm == "0 to 10")
+microbe_diversity_soil40 = microbe_diversity_soil %>% 
+  filter(depth_cm == "10 to 40")
+
+```
+
+```{r}
+ggplot(microbe_diversity_soil, aes(x = diversity, y = change21)) +
+  geom_point() +
+  facet_wrap(. ~ depth_cm) +
+  geom_smooth(method = "lm")
+```
+
+```{r}
+divmod_surf = lm(`2018` ~ diversity, data = microbe_diversity_soil)
+summary(divmod_surf)
+
+divmod_depth = lm(`2018` ~ diversity, data = microbe_diversity_soil40)
+summary(divmod_depth)
+
+divmod_depth_change = lm(change18 ~ diversity, data = microbe_diversity_soil40)
+summary(divmod_depth_change)
+
+divmod_surf_change = lm(change18 ~ diversity, data = microbe_diversity_soil10)
+summary(divmod_surf_change)
+
+
+divmod_surf_future = lm(change21 ~ diversity, data = microbe_diversity_soil10)
+summary(divmod_surf_future)
+
+divmod_depth_future = lm(change21 ~ diversity, data = microbe_diversity_soil0)
+summary(divmod_depth_future)
+
+```
+
+
 ## NMDS all depths
 
 ```{r}
@@ -609,25 +659,34 @@ trait_sum =  fam_carbon_function %>%
             mean_C = mean(`2018`))
 
 ```
-ggplot(top_taxa_pivot, aes(x = point_id, y = value, fill = phylum)) +
-  geom_col() +
-  theme_bw() +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y = element_text(size = 12),
-        axis.title = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.text = element_text(size = 12),
-        strip.background = element_rect(fill="white")) +
-  facet_grid(depth_cm ~ .) +
-  scale_fill_manual(name = "Phylum", values = rev(cal_palette("superbloom3", n = 10, type = "continuous"))) +
-  xlab("Sample Point") +
-  ylab("Relative Abundance")
+```{r}
+funtion_surface = fam_carbon_function %>% 
+  filter(depth_cm == "0 to 10")
+
+funtion_depth = fam_carbon_function %>% 
+  filter(depth_cm == "10 to 40")
+
+sfm = lm(formula = log(`2018`) ~ c_o_ratio, data = funtion_surface)
+summary(sfm)
+
+
+dfm = lm(formula = log(`2018`) ~ c_o_ratio, data = funtion_depth)
+summary(dfm)
+
+
+trait_mod_noint = lm(log(`2018`) ~  c_o_ratio + depth_cm, data = fam_carbon_function)
+summary(trait_mod_noint)
+
+AIC(trait_mod, trait_mod_noint)
+
+
+plot(trait_mod_noint)
+```
 
 
 ```{r}
-ggplot(fam_carbon_function, (aes(x = c_o_ratio, y = `2018`, color = depth_cm))) +
-  geom_point() +
+(function_16S_plot = ggplot(fam_carbon_function, (aes(x = c_o_ratio, y = log(`2018`)))) +
+  geom_point(aes(color = depth_cm)) +
   theme_bw() +
   # facet_grid(. ~ depth_cm) +
   scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") +
@@ -636,9 +695,13 @@ ggplot(fam_carbon_function, (aes(x = c_o_ratio, y = `2018`, color = depth_cm))) 
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 12),
         strip.background = element_rect(fill="white")) +
-  geom_smooth(data = fam_carbon_function %>% filter(depth_cm == "0 to 10"), method = "lm", fill = "darkgreen", alpha = 0.1) +
-  ylab("% Organic Carbon") +
-  xlab("Copiotroph:Oligotroph Ratio")
+  # geom_smooth(data = fam_carbon_function %>% filter(depth_cm == "0 to 10"), method = "lm", fill = "darkgreen", alpha = 0.1) +
+  geom_smooth(method = "lm", color = "black") +
+  ylab("log(% Organic Carbon)") +
+  xlab("Copiotroph:Oligotroph Ratio"))
+
+ggsave(here::here("documents/figures/function_16S_plot.png"), dpi = 300, plot = function_16S_plot, device = "png", width = 8, height = 6)
+
 ```
 
 
@@ -1171,13 +1234,29 @@ com_table_fun_all = com_table_fun_standard10 %>%
   select(-rowname) %>% 
   column_to_rownames("point_id")
 
+com_table_future = com_table_10_future %>% 
+  rownames_to_column() %>% 
+  mutate(point_id = str_sub(rowname, 1, 8)) %>% 
+  select(-rowname) %>% 
+  column_to_rownames("point_id")
+
+soil_veg_future = soil_change %>% 
+  filter(rownames(.) %in% rownames(com_table_10_future) | rownames(.) %in% rownames(com_table_40_future)) %>% 
+  select(point_id, depth_cm, change21) %>% 
+  pivot_wider(values_from = change21, names_from = depth_cm) %>% 
+  rename(surface = `0 to 10`,
+         depth = `10 to 40`)
+
+com_table_fun_future = com_table_fun_all %>% 
+  filter(rownames(.) %in% rownames(com_table_future))
+  
 ```
 
 
 ## Veg all
 ```{r}
 # vegNMDS10 = metaMDS(veg_data_match10, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
-library(goeveg)
+
 
 # dimcheckMDS(veg_data_match10, distance = "bray", k = 10, trymax = 50, autotransform = FALSE)
 
@@ -1269,6 +1348,72 @@ ggsave(here::here("documents/figures/veg_NMDS_all.png"), dpi = 300, plot = veg_N
 ```
 
 
+```{r}
+veg_table_soil = com_table %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg %>% rownames_to_column(), by = "rowname") %>% 
+  left_join(soil_veg_future, by = c("rowname" = "point_id"))
+
+
+napu_mod = lm(`2018_40` ~ DACA3, data = veg_table_soil)
+summary(napu_mod)
+
+```
+
+
+## diversity
+
+```{r}
+divs = diversity(com_table, index = "shannon") %>% 
+  as.data.frame()
+
+divs_21 = diversity(com_table21_change) %>% 
+  as.data.frame() 
+
+colnames(divs_21) = "diversity21"
+
+diversity21 = divs_21 %>% 
+  rownames_to_column()
+
+diversity_soil = diversity(com_table, index = "shannon") %>% 
+  as.data.frame() %>% 
+  mutate(diversity = divs$.) %>% 
+  select(diversity) %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg %>% rownames_to_column(), by = "rowname") %>% 
+  left_join(soil_veg_future, by = c("rowname" = "point_id")) %>% 
+  left_join(diversity21, by = "rowname")
+
+
+div_surf_mod = lm(`2018_10` ~ diversity, data = diversity_soil)
+summary(div_surf_mod)
+
+div_depth_mod = lm(`2018_40` ~ diversity, data = diversity_soil)
+summary(div_depth_mod)
+
+div_surf_change_mod = lm(change18_10 ~ diversity, data = diversity_soil) #significant
+summary(div_surf_change_mod)
+
+div_depth_change_mod = lm(change18_40 ~ diversity, data = diversity_soil)
+summary(div_depth_change_mod)
+
+div_surf_future_mod = lm(surface ~ diversity, data = diversity_soil)
+summary(div_surf_future_mod)
+
+div_depth_future_mod = lm(depth ~ diversity, data = diversity_soil)
+summary(div_depth_future_mod)
+
+
+```
+
+```{r}
+ggplot(diversity_soil, aes(x = diversity, y = change18_10)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+
+## functional groups
 
 ```{r}
 fun_grp_plot = com_table_fun_standard10 %>% 
@@ -1293,234 +1438,143 @@ top_species = new_com_table %>%
 ```{r}
 soil_veg_scores
 
-veg_mod = lm(`2018` ~ NMDS1 + NMDS2 + NMDS3, data = veg_scores_10)
-summary(veg_mod)
-
+# veg_mod = lm(`2018_10` ~ NMDS1 + NMDS2 + NMDS3, data = veg_scores)
+# summary(veg_mod)
+# 
 ```
 
 ```{r}
 
-fun_table_soil = com_table_fun_standard10 %>% 
+fun_table_soil = com_table_fun_all %>% 
   rownames_to_column() %>% 
-  left_join(soil_veg_match10 %>% rownames_to_column(), by = "rowname") %>% 
+  left_join(soil_veg %>% rownames_to_column(), by = "rowname") %>% 
   clean_names() %>% 
   mutate(p_a_grass = perennial_grass/annual_grass)
 
-pg_mod = lm(x2018 ~ p_a_grass, data = fun_table_soil)
+pg_mod = lm(x2018_10 ~ annual_forb, data = fun_table_soil)
 summary(pg_mod)
-```
-## Veg 40
+
+pg_mod40 = lm(x2018_40 ~ annual_forb, data = fun_table_soil)
+summary(pg_mod40)
+
+``` 
+
+
+## Future veg
 
 ```{r}
-vegNMDS40 = metaMDS(com_table40, distance = "bray", k = 3, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
+veg_future_NMDS = metaMDS(com_table_future, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
 
-veg_scores_40 = as.data.frame(scores(vegNMDS40))
+veg_scores_future = as.data.frame(scores(veg_future_NMDS))
+
 ```
 
+
 ```{r}
-soil_veg_scores40 = envfit(veg_scores_40, soil_veg_match40 %>% select(-sand, -silt, -clay), nperm = 999, na.rm = T, choices = c(1:3))
-soil_veg_scores_plot40 = as.data.frame(scores(soil_veg_scores40, display = "vectors")) %>% 
+soil_veg_scores_future = envfit(veg_scores_future, soil_veg_future, nperm = 999, na.rm = T, choices = c(1:3))
+soil_veg_scores_future_plot = as.data.frame(scores(soil_veg_scores_future, display = "vectors")) %>% 
   rownames_to_column() %>% 
-  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
-                              rowname == "2018" ~ "% Organic C",
-                              rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
-                              rowname == "cn_change" ~ "C:N ratio change",
-                              rowname == "n_2018" ~ "% Nitrogen",
-                              rowname == "c_n_ratio" ~ "C:N ratio",
-                              rowname == "change21" ~ "Future % Change",
-                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
+  mutate(variable = case_when(rowname == "change18_10" ~ "0-10cm % Carbon Change",
+                              rowname == "2018_10" ~ "0-10cm % Organic C",
+                              rowname == "change18_40" ~ "10-40cm % Carbon Change",
+                              rowname == "2018_40" ~ "10-40cm % Organic C"
+                              ),
+         label = case_when(rowname == "surface" ~ "0-10cm",
+                              rowname == "depth" ~ "10-40cm"))
 
 
-fun_grp_scores_40 = envfit(veg_scores_40, com_table_fun_standard40, nperm = 999, choices = c(1:3))
-fun_grp_scores_40_plot = as.data.frame(scores(fun_grp_scores_40, display = "vectors")) %>% 
-  rownames_to_column()%>% 
+fun_grp_scores_future = envfit(veg_scores_future, com_table_fun_future, nperm = 999, choices = c(1:3))
+fun_grp_scores_future_plot = as.data.frame(scores(fun_grp_scores_future, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  left_join(as.data.frame(fun_grp_scores$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>% 
+  filter(`fun_grp_scores$vectors$pvals` < 0.05) %>% 
   mutate(functional_group = case_when(rowname == "SedgesRushes" ~ "Sedges/Rushes",
                                       rowname != "SedgesRushes" ~ rowname))
 
-veg_scores_40 = as.data.frame(veg_scores_40) %>% 
+  # left_join(as.data.frame(fam_16_env10$vectors$pvals) %>% rownames_to_column(), by = "rowname")
+
+veg_scores_future = as.data.frame(scores(veg_future_NMDS)) %>% 
   rownames_to_column() %>% 
-  left_join(soil_veg_match40 %>% rownames_to_column(), by = "rowname") 
+  left_join(soil_veg_future %>% rownames_to_column(), by = c("rowname" = "point_id")) 
 
 ```
-  geom_point(aes(color = `2018`), size = 3)+
-  geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS3), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS3, label = variable),
-            size = 4) +
-  geom_text(data = fun_grp_scores_10_plot, mapping = aes(x = NMDS1, y = NMDS3, label = rowname), color = "blue") +
-  scale_color_viridis_c(name = "% Organic C") + 
-  theme_bw()
+
 ```{r}
-ggplot(veg_scores_40, aes(NMDS1, NMDS2)) +
-  geom_point(aes(color = `2018`), size = 3)+
-  geom_segment(data = soil_veg_scores_plot40, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+(veg_future = ggplot(veg_scores_future, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = surface), size = 3) +
+  geom_segment(data = soil_veg_scores_future_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "black", 
                arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text_repel(data = soil_veg_scores_plot40, aes(x = NMDS1, y = NMDS2, label = variable),
-            size = 4) +
-  geom_text(data = fun_grp_scores_40_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue") +
-  scale_color_viridis_c(name = "% Organic C") + 
-  theme_bw()
-```
+  geom_text_repel(data = soil_veg_scores_future_plot, aes(x = NMDS1, y = NMDS2, label = label),
+            size = 6, box.padding = 0.1) +
+  geom_text_repel(data = fun_grp_scores_future_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue", size = 6) +
+  scale_color_viridis_c(name = "Change 2018-21 \n%SOC 0-10 cm ") + 
+  theme_bw()) +
+  theme(axis.title = element_text(size = 14))
 
-```{r}
-ggplot(veg_scores_40, aes(NMDS1, NMDS3)) +
-  geom_point(aes(color = `2018`), size = 3)+
-  geom_segment(data = soil_veg_scores_plot40, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS3), 
-               color = "black", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text_repel(data = soil_veg_scores_plot40, aes(x = NMDS1, y = NMDS3, label = variable),
-            size = 4) +
-  geom_text(data = fun_grp_scores_40_plot, mapping = aes(x = NMDS1, y = NMDS3, label = functional_group), color = "blue") +
-  scale_color_viridis_c(name = "% Organic C") + 
-  theme_bw()
+ggsave(here::here("documents/figures/veg_future_NMDS.png"), dpi = 300, plot = veg_future, device = "png", width = 8, height = 6)
 
-```
-```{r}
-soil_veg_scores40
-
-```
-
-# future
-
-```{r}
-com_table_10_future = com_table10 %>% 
-  filter(rownames(.) %in% rownames(soil_veg_match10_future))
-
-com_table_40_future = com_table40 %>% 
-  filter(rownames(.) %in% rownames(soil_veg_match40_future))
 ```
 
 
 ```{r}
-vegNMDS10_f = metaMDS(com_table_10_future, distance = "bray", k = 3, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
-
-vegNMDS40_f = metaMDS(com_table_40_future, distance = "bray", k = 3, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
-```
-
-
-```{r}
-
-veg_scores_10_f =  vegNMDS10_f$points
-soil_veg_scores_future = envfit(veg_scores_10_f, soil_veg_match10_future, nperm = 999, na.rm = T, choices = c(1:3))
-soil_veg_scores_future_plot = as.data.frame(scores(soil_veg_scores_future, display = "vectors")) %>% 
+fun_table_soil_future = com_table_fun_future %>% 
   rownames_to_column() %>% 
-  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
-                              rowname == "2018" ~ "% Organic C",
-                              rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
-                              rowname == "cn_change" ~ "C:N ratio change",
-                              rowname == "n_2018" ~ "% Nitrogen",
-                              rowname == "c_n_ratio" ~ "C:N ratio",
-                              rowname == "change21" ~ "Future % Change",
-                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
-
-veg_scores_10_f = as.data.frame(veg_scores_10_f)
-
-com_table_fun_standard10_f = com_table_fun_standard10 %>% 
-  filter(rownames(.) %in% rownames(soil_veg_match10_future))
-
-fun_grp_scores_10_f = envfit(veg_scores_10_f, com_table_fun_standard10_f, nperm = 999, choices = c(1:3))
-fun_grp_scores_10_plot_f = as.data.frame(scores(fun_grp_scores_10_f, display = "vectors")) %>% 
-  rownames_to_column()
+  left_join(soil_veg_future %>% rownames_to_column(), by = c("rowname" = "point_id")) %>% 
+  clean_names() %>% 
+  mutate(p_a_grass = perennial_grass/annual_grass)
 ```
 
 ```{r}
-ggplot(veg_scores_10_f, aes(MDS1, MDS2)) +
-  geom_point(size = 4)+
-  geom_segment(data = soil_veg_scores_future_plot, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = soil_veg_scores_future_plot, aes(x = MDS1, y = MDS2, label = variable),
-            size = 6) +
-  geom_text(data = fun_grp_scores_10_plot_f, mapping = aes(x = MDS1, y = MDS2, label = rowname), color = "red") +
-  theme_bw()
+mod_future = lm(surface ~ log(p_a_grass), data = fun_table_soil_future)
+summary(mod_future)
+
+plot(mod_future)
 
 ```
 
 ```{r}
-ggplot(veg_scores_10, aes(MDS1, MDS3)) +
-  geom_point(size = 4) +
-  geom_segment(data = soil_veg_scores_future_plot, aes(x = 0, xend = MDS1, y = 0, yend = MDS3), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = soil_veg_scores_future_plot, aes(x = MDS1, y = MDS3, label = variable),
-            size = 6) +
-  geom_text(data = fun_grp_scores_10_plot, mapping = aes(x = MDS1, y = MDS3, label = rowname), color = "red") +
-  theme_bw()
-
-```
-```{r}
-ggplot(veg_scores_10, aes(MDS2, MDS3)) +
-  geom_point(size = 4) +
-  geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = MDS2, y = 0, yend = MDS3), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = soil_veg_scores_plot, aes(x = MDS2, y = MDS3, label = variable),
-            size = 6) +
-  geom_text(data = fun_grp_scores_10_plot, mapping = aes(x = MDS2, y = MDS3, label = rowname), color = "red") +
-  theme_bw()
-```
+(p_a_change = ggplot(fun_table_soil_future, aes(x = p_a_grass, y = surface)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "black") +
+  theme_bw() +
+  theme(axis.title = element_text(size = 14)) +
+  xlab("Perennial Grass:Annual Grass") +
+  ylab("% Change SOC 0-10cm 2018-21"))
+  
 
 
-```{r}
+ggsave(here::here("documents/figures/p_a_change.png"), dpi = 300, plot = p_a_change, device = "png", width = 8, height = 6)
 
-veg_scores_40_f =  vegNMDS40_f$points
-soil_veg_scores_future40 = envfit(veg_scores_40_f, soil_veg_match40_future, nperm = 999, na.rm = T, choices = c(1:3))
-soil_veg_scores_future_plot40 = as.data.frame(scores(soil_veg_scores_future40, display = "vectors")) %>% 
-  rownames_to_column() %>% 
-  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
-                              rowname == "2018" ~ "% Organic C",
-                              rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
-                              rowname == "cn_change" ~ "C:N ratio change",
-                              rowname == "n_2018" ~ "% Nitrogen",
-                              rowname == "c_n_ratio" ~ "C:N ratio",
-                              rowname == "change21" ~ "Future % Change",
-                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
-
-veg_scores_40_f = as.data.frame(veg_scores_40_f)
-
-com_table_fun_standard40_f = com_table_fun_standard40 %>% 
-  filter(rownames(.) %in% rownames(soil_veg_match40_future))
-
-fun_grp_scores_40_f = envfit(veg_scores_40_f, com_table_fun_standard40_f, nperm = 999, choices = c(1:3))
-fun_grp_scores_40_plot_f = as.data.frame(scores(fun_grp_scores_40_f, display = "vectors")) %>% 
-  rownames_to_column()
-```
-
-```{r}
-ggplot(veg_scores_40_f, aes(MDS1, MDS2)) +
-  geom_point(size = 4)+
-  geom_segment(data = soil_veg_scores_future_plot40, aes(x = 0, xend = MDS1, y = 0, yend = MDS2), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = soil_veg_scores_future_plot40, aes(x = MDS1, y = MDS2, label = variable),
-            size = 6) +
-  geom_text(data = fun_grp_scores_40_plot_f, mapping = aes(x = MDS1, y = MDS2, label = rowname), color = "red") +
-  theme_bw()
 
 ```
 
 ```{r}
-ggplot(veg_scores_40_f, aes(MDS1, MDS3)) +
-  geom_point(size = 4)+
-  geom_segment(data = soil_veg_scores_future_plot40, aes(x = 0, xend = MDS1, y = 0, yend = MDS3), 
-               color = "blue", 
-               arrow = arrow(length = unit(0.25, "cm"))) +
-  geom_text(data = soil_veg_scores_future_plot40, aes(x = MDS1, y = MDS3, label = variable),
-            size = 6) +
-  geom_text(data = fun_grp_scores_40_plot_f, mapping = aes(x = MDS1, y = MDS3, label = rowname), color = "red") +
-  theme_bw()
+(perennial_change = ggplot(fun_table_soil_future, aes(x = perennial_grass, y = surface)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "black") +
+  theme_bw() +
+  theme(axis.title = element_text(size = 14)) +
+  xlab("Perennial Grass Cover") +
+  ylab("% Change SOC 0-10cm 2018-21"))
+
+ggsave(here::here("documents/figures/perennial_change.png"), dpi = 300, plot = perennial_change, device = "png", width = 8, height = 6)
 
 ```
+
+
 
 
 ```{r}
 veg_soil_change = veg_point_distance %>% 
   mutate(point_id = str_sub(points, 1, 8)) %>% 
-  left_join(change, by = "point_id") 
+  left_join(change, by = "point_id") %>% 
+  select(point_id, distance, depth_cm, change18) %>% 
+  pivot_wider(values_from = change18, names_from = depth_cm) %>% 
+  rename(surface = `0 to 10`,
+         depth = `10 to 40`)
 
-m = lm(change21 ~ distance*depth_cm, data = veg_soil_change)
+m = lm(surface ~ distance, data = veg_soil_change)
 summary(m)
 
 
@@ -1531,28 +1585,167 @@ summary(m)
 
 veg_soil_change18 = veg_point_distance18 %>% 
   mutate(point_id = str_sub(points, 1, 8)) %>% 
-  left_join(change, by = "point_id") 
+  left_join(change, by = "point_id") %>% 
+  select(point_id, distance, depth_cm, change18) %>% 
+  pivot_wider(values_from = change18, names_from = depth_cm) %>% 
+  rename(surface = `0 to 10`,
+         depth = `10 to 40`)
 
-m18 = lm(change18 ~ distance*depth_cm, data = veg_soil_change18)
+m18 = lm(depth ~ distance, data = veg_soil_change18)
 summary(m18)
 
 ```
 
 ```{r}
-ggplot(veg_soil_change, aes(x = distance, y = change21, color = depth_cm)) +
+ggplot(veg_soil_change, aes(x = distance, y = surface)) +
   geom_point() +
-  scale_color_manual(name = "Depth", values = c("purple", "green")) +
+  theme_bw() +
+  ylab("Change 2018 - 2021")
+
+ggplot(veg_soil_change, aes(x = distance, y = depth)) +
+  geom_point() +
   theme_bw() +
   ylab("Change 2018 - 2021")
 ```
+
+
+## Veg change matrix
+
+
 ```{r}
-ggplot(veg_soil_change18, aes(x = distance, y = change18, color = depth_cm)) +
-  geom_point() +
-  scale_color_manual(name = "Depth", values = c("purple", "green")) +
-  theme_bw() +
-  ylab("Change 2016 - 2018")
 
 ```
+
+
+```{r}
+
+
+
+veg_change_com_table = veg_change_com
+
+veg_change_fun = veg_change_com_table %>% 
+  rownames_to_column("point_id") %>% 
+  pivot_longer(-point_id) %>% 
+  left_join(fungrps, by = c("name" = "symbol")) %>% 
+  mutate(fun_grp = replace(fun_grp, name == "2GA", "Annual Grass"),
+         fun_grp = replace(fun_grp, name == "2FA", "Annual Forb"),
+         fun_grp = replace(fun_grp, name == "2GP", "Perennial Grass")) %>% 
+  select(-name) %>% 
+  group_by(point_id, fun_grp) %>% 
+  summarise(fun_change = sum(value)) %>% 
+  filter(!is.na(fun_grp)) %>% 
+  pivot_wider(point_id, names_from = fun_grp, values_from = fun_change)
+
+
+fun_table21 = data_21 %>% 
+  select(-year) %>% 
+  pivot_longer(-point_id) %>% 
+  left_join(fungrps, by = c("name" = "symbol")) %>% 
+  mutate(fun_grp = replace(fun_grp, name == "2GA", "Annual Grass"),
+         fun_grp = replace(fun_grp, name == "2FA", "Annual Forb"),
+         fun_grp = replace(fun_grp, name == "2GP", "Perennial Grass")) %>% 
+  select(-name) %>% 
+  group_by(point_id, fun_grp) %>% 
+  summarise(fun_change = sum(value)) %>% 
+  filter(!is.na(fun_grp)) %>% 
+  pivot_wider(point_id, names_from = fun_grp, values_from = fun_change) %>% 
+  column_to_rownames("point_id") %>% 
+  decostand(method = "total") %>% 
+  clean_names() %>% 
+  mutate(p_a_grass = perennial_grass/annual_grass) %>% 
+  rownames_to_column("point_id")
+
+
+
+           
+           
+
+```
+
+```{r}
+veg_change_NMDS = metaMDS(veg_change_com_table, distance = "euclidian", k = 2, maxit = 999, trymax = 500, wascores = TRUE, autotransform = T)
+
+veg_scores_change = as.data.frame(scores(veg_change_NMDS))
+
+```
+
+```{r}
+
+soil_veg_scores_change = envfit(veg_scores_change, soil_veg_future, nperm = 999, na.rm = T, choices = c(1:2))
+soil_veg_scores_change_plot = as.data.frame(scores(soil_veg_scores_change, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18_10" ~ "0-10cm % Carbon Change",
+                              rowname == "2018_10" ~ "0-10cm % Organic C",
+                              rowname == "change18_40" ~ "10-40cm % Carbon Change",
+                              rowname == "2018_40" ~ "10-40cm % Organic C"
+                              ),
+         label = case_when(rowname == "surface" ~ "0-10cm",
+                              rowname == "depth" ~ "10-40cm"))
+
+
+fun_grp_scores_change = envfit(veg_scores_change, veg_change_fun, nperm = 999, choices = c(1:3))
+fun_grp_scores_change_plot = as.data.frame(scores(fun_grp_scores_change, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  left_join(as.data.frame(fun_grp_scores$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>% 
+  filter(`fun_grp_scores$vectors$pvals` < 0.05) %>%
+  mutate(functional_group = case_when(rowname == "SedgesRushes" ~ "Sedges/Rushes",
+                                      rowname != "SedgesRushes" ~ rowname))
+
+  # left_join(as.data.frame(fam_16_env10$vectors$pvals) %>% rownames_to_column(), by = "rowname")
+
+veg_scores_change = as.data.frame(scores(veg_change_NMDS)) %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg_future %>% rownames_to_column(), by = c("rowname" = "point_id")) 
+
+```
+
+```{r}
+(veg_change = ggplot(veg_scores_change, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = surface), size = 3) +
+  geom_segment(data = soil_veg_scores_change_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "black", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text_repel(data = soil_veg_scores_change_plot, aes(x = NMDS1, y = NMDS2, label = label),
+            size = 6, box.padding = 0.1) +
+  geom_text_repel(data = fun_grp_scores_change_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue", size = 6) +
+  scale_color_viridis_c(name = "Change 2018-21 \n%SOC 0-10 cm ") + 
+  theme_bw()) +
+  theme(axis.title = element_text(size = 14))
+```
+
+```{r}
+p_a_change = tibble(p_a_change = fun_table21$p_a_grass - fun_table_soil_future$p_a_grass)
+
+
+
+fun_table_soil_change = veg_change_fun %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg_future %>% rownames_to_column(), by = "point_id") %>% 
+  clean_names() %>% 
+  bind_cols(p_a_change) %>% 
+  mutate(p_a_change_transform = log(p_a_change - min(fun_table_soil_change$p_a_change) + 0.01))
+
+
+pg_c = lm(surface ~ p_a_change, data = fun_table_soil_change)
+summary(pg_c)
+
+
+
+plot(pg_c)
+```
+```{r}
+ggplot(fun_table_soil_change, aes(x = p_a_change, y = surface)) + 
+  geom_point()
+```
+
+
+
+
+
+
+
+
+
 
 # canopy
 
@@ -1576,37 +1769,39 @@ canopy18 = canopy_sum %>%
 ```{r}
 canopy_total_18_soil = canopy_total_18 %>% 
   left_join(change, by = "point_id") %>% 
-  filter(point_id != "TOKA-013")
+  filter(point_id != "TOKA-013") %>% 
+  select(point_id, total, depth_cm, change18, `2018`, change21) %>% 
+  pivot_wider(values_from =change21 , names_from = depth_cm) %>% 
+  rename(surface = `0 to 10`,
+         depth = `10 to 40`)
 ```
 
 
 ```{r}
-cm = lm(`2018` ~ total*depth_cm, data = canopy_total_18_soil)
+cm = lm(`surface` ~ total, data = canopy_total_18_soil)
 summary(cm)
 
 
-cm = lm(change21 ~ total*depth_cm, data = canopy_total_18_soil)
+cm = lm(`depth` ~ total, data = canopy_total_18_soil)
 summary(cm)
-
 ```
 
 ```{r}
-ggplot(canopy_total_18_soil, aes(x = total, y = `2018`, color = depth_cm)) +
+ggplot(canopy_total_18_soil, aes(x = total, y = depth)) +
+  geom_point() +
+  scale_color_manual(name = "Depth", values = c("green", "purple")) +
+  xlab("Canopy Cover 2018") +
+  ylab("% SOC 2018") +
+  theme_bw()
+
+ggplot(canopy_total_18_soil, aes(x = total, y = surface)) +
   geom_point() +
   scale_color_manual(name = "Depth", values = c("green", "purple")) +
   xlab("Canopy Cover 2018") +
   ylab("% SOC 2018") +
   theme_bw()
 ```
-```{r}
-ggplot(canopy_total_18_soil, aes(x = total, y = change18, color = depth_cm)) +
-  geom_point() +
-  scale_color_manual(name = "Depth", values = c("green", "purple")) +
-  xlab("Canopy Cover 2018") +
-  ylab("SOC Change 2015-2018") +
-  theme_bw()
 
-```
 
 
 ```{r}
@@ -1617,20 +1812,34 @@ canopy_change = canopy_cover %>%
   summarise(canopy_change = diff(percent_cover))
 
 canopy_change_soil = canopy_change %>% 
-  left_join(change, by = "point_id")
+  left_join(change, by = "point_id") %>% 
+  select(point_id, canopy_change, depth_cm, change21) %>% 
+  pivot_wider(values_from = change21, names_from = depth_cm) %>% 
+  rename(surface = `0 to 10`,
+         depth = `10 to 40`)
 
 
-ccm = lm(change21 ~ canopy_change:depth_cm, data = canopy_change_soil)
+ccm = lm(surface ~ canopy_change, data = canopy_change_soil)
 summary(ccm)
 
-ccm1 = lm(change21 ~ canopy_change*depth_cm, data = canopy_change_soil)
+ccm1 = lm(depth ~ canopy_change, data = canopy_change_soil)
 summary(ccm1)
 
-AIC(ccm, ccm1)
+plot(ccm)
+
 ```
 
 ```{r}
-ggplot(canopy_change_soil, aes(x = canopy_change, y = change21, color = depth_cm)) +
+ggplot(canopy_change_soil, aes(x = canopy_change, y = surface)) +
+  geom_point() +
+  scale_color_manual(name = "Depth", values = c("green", "purple")) +
+  xlab("Canopy Cover Change 2018 - 2021") +
+  ylab("SOC Change 2021") +
+  geom_smooth(method = "lm") +
+  theme_bw()
+
+
+ggplot(canopy_change_soil, aes(x = canopy_change, y = depth)) +
   geom_point() +
   scale_color_manual(name = "Depth", values = c("green", "purple")) +
   xlab("Canopy Cover Change 2018 - 2021") +

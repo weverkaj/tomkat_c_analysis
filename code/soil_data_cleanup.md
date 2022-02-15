@@ -45,8 +45,8 @@ data_nut = tibble(files = list.files(here("data/soil"))) %>%
 ```
 
 ```
-## Warning: The following named parsers don't match the column names: Olsen P, Sodium, Total Nitrogen,
-## pH, Sand, Silt, Clay
+## Warning: The following named parsers don't match the column names: Olsen P, Sodium, Total
+## Nitrogen, pH, Sand, Silt, Clay
 ```
 
 ```r
@@ -58,10 +58,10 @@ data_rmn_raw = read_csv(here("data/soil/toka_soil_surveys.csv"))
 ```
 
 ```
-## -- Column specification ---------------------------------------------------------------------------
+## -- Column specification --------------------------------------------------------------------------
 ## Delimiter: ","
-## chr  (10): Project, Study Area, Transect Name, Point Name, Protocol, Catenal Position, Research...
-## dbl  (25): Sample Number, Sample Distance, Sample Bearing, Ring Infiltrometer Diameter, Water V...
+## chr  (10): Project, Study Area, Transect Name, Point Name, Protocol, Catenal Position, Researc...
+## dbl  (25): Sample Number, Sample Distance, Sample Bearing, Ring Infiltrometer Diameter, Water ...
 ## lgl   (4): Start Time, End Time, Water Infiltration Time 4, Other Observers Names
 ## date  (1): Date
 ## time  (3): Water Infiltration Time 1, Water Infiltration Time 2, Water Infiltration Time 3
