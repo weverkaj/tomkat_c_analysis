@@ -160,9 +160,17 @@ microbe_diversity = diversity(otu_standard_match) %>%
 
 colnames(microbe_diversity) = "diversity"
 
+microbe_richness = specnumber(otu_standard_match) %>% 
+  as.data.frame()
+
+colnames(microbe_richness) = "richness"
+
 microbe_diversity_soil = microbe_diversity %>% 
   rownames_to_column() %>% 
+  left_join(microbe_richness %>% rownames_to_column(), by = "rowname") %>% 
   left_join(soil_change %>% rownames_to_column(), by = "rowname")
+
+
 
 
 microbe_diversity_soil10 = microbe_diversity_soil %>% 
@@ -173,30 +181,35 @@ microbe_diversity_soil40 = microbe_diversity_soil %>%
 ```
 
 ```{r}
-ggplot(microbe_diversity_soil, aes(x = diversity, y = change21)) +
+ggplot(microbe_diversity_soil, aes(x = diversity, y = change18, color = depth_cm)) +
+  geom_point() +
+  facet_wrap(. ~ depth_cm) +
+  geom_smooth(method = "lm")
+
+ggplot(microbe_diversity_soil, aes(x = richness, y = change18, color = depth_cm)) +
   geom_point() +
   facet_wrap(. ~ depth_cm) +
   geom_smooth(method = "lm")
 ```
 
 ```{r}
-divmod_surf = lm(`2018` ~ diversity, data = microbe_diversity_soil)
+divmod_surf = lm(`2018` ~ richness, data = microbe_diversity_soil)
 summary(divmod_surf)
 
-divmod_depth = lm(`2018` ~ diversity, data = microbe_diversity_soil40)
+divmod_depth = lm(`2018` ~ richness, data = microbe_diversity_soil40)
 summary(divmod_depth)
 
-divmod_depth_change = lm(change18 ~ diversity, data = microbe_diversity_soil40)
+divmod_depth_change = lm(change18 ~ richness, data = microbe_diversity_soil40)
 summary(divmod_depth_change)
 
-divmod_surf_change = lm(change18 ~ diversity, data = microbe_diversity_soil10)
+divmod_surf_change = lm(change18 ~ richness, data = microbe_diversity_soil10)
 summary(divmod_surf_change)
 
 
-divmod_surf_future = lm(change21 ~ diversity, data = microbe_diversity_soil10)
+divmod_surf_future = lm(change21 ~ richness, data = microbe_diversity_soil10)
 summary(divmod_surf_future)
 
-divmod_depth_future = lm(change21 ~ diversity, data = microbe_diversity_soil0)
+divmod_depth_future = lm(change21 ~ richness, data = microbe_diversity_soil40)
 summary(divmod_depth_future)
 
 ```
@@ -1367,6 +1380,8 @@ summary(napu_mod)
 divs = diversity(com_table, index = "shannon") %>% 
   as.data.frame()
 
+colnames(divs) = "diversity18"
+
 divs_21 = diversity(com_table21_change) %>% 
   as.data.frame() 
 
@@ -1375,41 +1390,50 @@ colnames(divs_21) = "diversity21"
 diversity21 = divs_21 %>% 
   rownames_to_column()
 
-diversity_soil = diversity(com_table, index = "shannon") %>% 
-  as.data.frame() %>% 
-  mutate(diversity = divs$.) %>% 
-  select(diversity) %>% 
+diversity_soil = divs %>% 
+  select(diversity18) %>% 
   rownames_to_column() %>% 
   left_join(soil_veg %>% rownames_to_column(), by = "rowname") %>% 
   left_join(soil_veg_future, by = c("rowname" = "point_id")) %>% 
-  left_join(diversity21, by = "rowname")
+  left_join(diversity21, by = "rowname") %>% 
+  mutate(diversity_change = diversity21 - diversity18)
 
 
-div_surf_mod = lm(`2018_10` ~ diversity, data = diversity_soil)
+div_surf_mod = lm(`2018_10` ~ diversity18, data = diversity_soil)
 summary(div_surf_mod)
 
-div_depth_mod = lm(`2018_40` ~ diversity, data = diversity_soil)
+div_depth_mod = lm(`2018_40` ~ diversity18, data = diversity_soil)
 summary(div_depth_mod)
 
-div_surf_change_mod = lm(change18_10 ~ diversity, data = diversity_soil) #significant
+div_surf_change_mod = lm(change18_10 ~ diversity18, data = diversity_soil) #significant
 summary(div_surf_change_mod)
 
-div_depth_change_mod = lm(change18_40 ~ diversity, data = diversity_soil)
+div_depth_change_mod = lm(change18_40 ~ diversity18, data = diversity_soil)
 summary(div_depth_change_mod)
 
-div_surf_future_mod = lm(surface ~ diversity, data = diversity_soil)
+div_surf_future_mod = lm(surface ~ diversity18, data = diversity_soil)
 summary(div_surf_future_mod)
 
-div_depth_future_mod = lm(depth ~ diversity, data = diversity_soil)
+div_depth_future_mod = lm(depth ~ diversity18, data = diversity_soil)
 summary(div_depth_future_mod)
+
+div_change_surf = lm(surface ~ diversity_change, data = diversity_soil)
+summary(div_change_surf)
+
+div_change_surf = lm(depth ~ diversity_change, data = diversity_soil)
+summary(div_change_surf)
 
 
 ```
 
 ```{r}
-ggplot(diversity_soil, aes(x = diversity, y = change18_10)) +
+ggplot(diversity_soil, aes(x = diversity18, y = change18_10)) +
   geom_point() +
   geom_smooth(method = "lm")
+
+summary(div_surf_change_mod)
+plot(div_surf_change_mod)
+
 ```
 
 
@@ -1450,6 +1474,19 @@ fun_table_soil = com_table_fun_all %>%
   left_join(soil_veg %>% rownames_to_column(), by = "rowname") %>% 
   clean_names() %>% 
   mutate(p_a_grass = perennial_grass/annual_grass)
+
+pg_table = com_table %>% 
+  select(NAPU4, PHAQ, DACA3) %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg %>% rownames_to_column(), by = "rowname")
+
+phaqmod = lm(`2018_10` ~ PHAQ, data = pg_table)
+summary(phaqmod)
+
+dacamod = lm(`2018_10` ~ DACA3, data = pg_table)
+summary(dacamod)
+
+
 
 pg_mod = lm(x2018_10 ~ annual_forb, data = fun_table_soil)
 summary(pg_mod)
