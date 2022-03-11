@@ -123,7 +123,7 @@ d = all_data %>%
          ) %>% 
   mutate(change = map2(`2018`, `2015`, ~ .x %>% 
                          full_join(.y, by = c("point_id"), suffix = c("2018", "2015")) %>% 
-                         select(contains(c("point_id", "sand", "silt", "clay", "total_org", "nitrogen", "cn"))) %>% 
+                         select(contains(c("point_id", "sand", "silt", "clay", "total_org", "nitrogen", "cn", "p_h"))) %>% 
                           mutate(c_change = total_org_carbon2018 - total_org_carbon2015,
                                 c_pc_change = c_change/total_org_carbon2015,
                                 n_change = nitrogen2018 - nitrogen2015,
@@ -133,9 +133,10 @@ d = all_data %>%
                                 c_n_ratio = c_2018/n_2018,
                                 sand = sand2018,
                                 silt = silt2018,
-                                clay = clay2018
+                                clay = clay2018,
+                                p_h_change = p_h2018 - p_h2015
                                 ) %>% 
-                         select(point_id, n_change, n_2018, sand, silt, clay, contains("nitrogen")) 
+                         select(point_id, n_change, n_2018, sand, silt, clay, contains("nitrogen"), contains("p_h")) 
                          )
          )
                        
@@ -185,6 +186,8 @@ change = d %>%
 #   geom_point()
 
 ```
+
+
 ```{r}
 change10 = change %>% 
   filter(depth_cm == "0 to 10")
@@ -195,7 +198,7 @@ summary(change40)
 ```
 
 ```{r}
-# m = lm(c_change ~ n_change, data = change)
-# summary(m)
+p_h = lm(`2018` ~ p_h2018, data = change40)
+summary(p_h)
 ```
 
