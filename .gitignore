@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 #google drive link
 .lnk
+
+#fungal data (heavy)
+*fungal_sequencing*
