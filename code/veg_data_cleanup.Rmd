@@ -198,21 +198,21 @@ new_com_table = data_18 %>%
   mutate(id = paste(point_id, "10", sep = "-")) %>% 
   column_to_rownames("id") %>% 
   select(-point_id, -year) %>% 
-  decostand(method = "normalize")
+  decostand(method = "total")
 
 new_com_table10 = data_18 %>% 
   ungroup() %>% 
   mutate(id = paste(point_id, "10", sep = "-")) %>% 
   column_to_rownames("id") %>% 
   select(-point_id, -year) %>% 
-  decostand(method = "normalize")
+  decostand(method = "total")
 
 new_com_table40 = data_18 %>% 
   ungroup() %>% 
   mutate(id = paste(point_id, "40", sep = "-")) %>% 
   column_to_rownames("id") %>% 
   select(-point_id, -year) %>% 
-  decostand(method = "normalize")
+  decostand(method = "total")
 
 com.rda = rda(new_com_table)
 com_scores = scores(com.rda, display = "sites", choices = c(1,2,3,4)) %>% 

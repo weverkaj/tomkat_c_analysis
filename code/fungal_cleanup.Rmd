@@ -1,0 +1,21 @@
+---
+title: "fungus"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r cars}
+asv_tab_forward = read.csv(here("data/asv_tab_forward_long.csv")) #asv table
+asv_tab_unite = read.csv(here("data/asv_unite_forward..csv")) #taxon assignments in same order as OTUs
+asv_guilds = read.csv(here("data/asv_unite_forward_ff.guilds.csv")) #functional assignments
+
+```
+
+
+
+

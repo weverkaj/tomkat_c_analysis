@@ -198,7 +198,15 @@ summary(change40)
 ```
 
 ```{r}
-p_h = lm(`2018` ~ p_h2018, data = change40)
+p_h = lm(`2018` ~ p_h2018 + depth_cm, data = change %>% filter(`2018` < 5))
 summary(p_h)
+
+plot(p_h)
 ```
+```{r}
+ggplot(change, aes(x = p_h2018, y = `2018`, color = depth_cm)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
 

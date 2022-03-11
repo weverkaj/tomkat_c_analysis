@@ -39,9 +39,9 @@ lpi_raw = toka_lpi = read_csv(here("data/veg/toka_lpi.csv"))
 ```
 
 ```
-## -- Column specification -----------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------
 ## Delimiter: ","
-## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, Lower2, Lower3, Lower4, Low...
+## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, Lower2, Lower3, Lower4,...
 ## dbl   (4): Point Index, Direction, Height, Thatch Top Layer
 ## lgl   (4): Lower7, Lower8, Lower9, Lower10
 ## date  (1): Date
@@ -71,9 +71,9 @@ lpi_count = toka_lpi = read_csv(here("data/veg/toka_lpi.csv")) %>%
 ```
 
 ```
-## -- Column specification -----------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------
 ## Delimiter: ","
-## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, Lower2, Lower3, Lower4, Low...
+## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, Lower2, Lower3, Lower4,...
 ## dbl   (4): Point Index, Direction, Height, Thatch Top Layer
 ## lgl   (4): Lower7, Lower8, Lower9, Lower10
 ## date  (1): Date
@@ -109,9 +109,9 @@ toka_lpi = read_csv(here("data/veg/toka_lpi.csv")) %>%
 ```
 
 ```
-## -- Column specification -----------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------
 ## Delimiter: ","
-## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, Lower2, Lower3, Lower4, Low...
+## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, Lower2, Lower3, Lower4,...
 ## dbl   (4): Point Index, Direction, Height, Thatch Top Layer
 ## lgl   (4): Lower7, Lower8, Lower9, Lower10
 ## date  (1): Date
@@ -148,9 +148,9 @@ toka_canopy = read_csv(here("data/veg/toka_lpi.csv")) %>%
 ```
 
 ```
-## -- Column specification -----------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------
 ## Delimiter: ","
-## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, Lower2, Lower3, Lower4, Low...
+## chr  (14): Study Area, Transect Name, Point Id, Canopy1, Canopy2, Canopy3, Top Layer, Lower1, Lower2, Lower3, Lower4,...
 ## dbl   (4): Point Index, Direction, Height, Thatch Top Layer
 ## lgl   (4): Lower7, Lower8, Lower9, Lower10
 ## date  (1): Date
@@ -259,7 +259,7 @@ releve = read_csv(here("data/veg/toka_releve.csv")) %>%
 ```
 
 ```
-## -- Column specification -----------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------
 ## Delimiter: ","
 ## chr  (5): Study Area, Transect Name, Point Id, Vegetation Type, USDA Code
 ## dbl  (2): Percent Cover, Height
@@ -418,21 +418,21 @@ new_com_table = data_18 %>%
   mutate(id = paste(point_id, "10", sep = "-")) %>% 
   column_to_rownames("id") %>% 
   select(-point_id, -year) %>% 
-  decostand(method = "normalize")
+  decostand(method = "total")
 
 new_com_table10 = data_18 %>% 
   ungroup() %>% 
   mutate(id = paste(point_id, "10", sep = "-")) %>% 
   column_to_rownames("id") %>% 
   select(-point_id, -year) %>% 
-  decostand(method = "normalize")
+  decostand(method = "total")
 
 new_com_table40 = data_18 %>% 
   ungroup() %>% 
   mutate(id = paste(point_id, "40", sep = "-")) %>% 
   column_to_rownames("id") %>% 
   select(-point_id, -year) %>% 
-  decostand(method = "normalize")
+  decostand(method = "total")
 
 com.rda = rda(new_com_table)
 com_scores = scores(com.rda, display = "sites", choices = c(1,2,3,4)) %>% 
@@ -523,6 +523,13 @@ top_species = new_com_table %>%
 
 
 `````r
+com_table21_change = data_21 %>% 
+  column_to_rownames("point_id") %>% 
+  select(-year) %>% 
+  decostand(method = "total")
+
+
+
 com_table18_change = data_18 %>% 
   column_to_rownames("point_id") %>% 
   select(-year) %>% 
@@ -530,10 +537,6 @@ com_table18_change = data_18 %>%
   filter(rownames(.) %in% rownames(com_table21_change))
   
 
-com_table21_change = data_21 %>% 
-  column_to_rownames("point_id") %>% 
-  select(-year) %>% 
-  decostand(method = "total")
 
 veg_change_com = com_table21_change - com_table18_change
   
