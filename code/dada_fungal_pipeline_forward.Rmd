@@ -77,7 +77,7 @@ cutadapt <-  "/Users/Gabe/.local/bin/cutadapt"
 
 system2(cutadapt, args = "--version") # Run shell commands from R
 
-path.cut <- file.path(path)
+path.cut <- file.path(path, "cutadapt")
 if(!dir.exists(path.cut)) dir.create(path.cut)
 fnFs.cut <- file.path(path.cut, basename(fnFs))
 fnRs.cut <- file.path(path.cut, basename(fnRs))
@@ -103,9 +103,12 @@ rbind(FWD.ForwardReads = sapply(FWD.orients, primerHits, fn = fnFs.cut[[1]]),
 ```
 
 ```{r}
+
+path.filtN <- file.path(path, "filtN")
+
 # Forward and reverse fastq filenames have the format:
-cutFs <- sort(list.files(path.cut, pattern = "R1_001.fastq", full.names = TRUE))
-cutRs <- sort(list.files(path.cut, pattern = "R2_001.fastq", full.names = TRUE))
+cutFs <- sort(list.files(path.filtN, pattern = "R1_001.fastq", full.names = TRUE))
+cutRs <- sort(list.files(path.filtN, pattern = "R2_001.fastq", full.names = TRUE))
 
 # Extract sample names, assuming filenames have format:
 get.sample.name <- function(fname) strsplit(basename(fname), "_")[[1]][1]
@@ -117,17 +120,16 @@ head(sample.names)
 
 ```{r}
 plotQualityProfile(cutFs[1:2])
-plotQualityProfile(cutRs[1:2])
 
 ```
 ```{r}
-filtFs <- file.path(path.cut, "filtered", basename(cutFs))
-filtRs <- file.path(path.cut, "filtered", basename(cutRs))
+filtFs <- file.path(path.filtN, "filtered", basename(cutFs))
+filtRs <- file.path(path.filtN, "filtered", basename(cutRs))
 ```
 
 
 ```{r filter and trim}
-out <- filterAndTrim(cutFs, filtFs, cutRs, filtRs, maxN = 0, maxEE = c(10, 10), 
+out <- filterAndTrim(cutFs, filtFs, maxN = 0, maxEE = 2, 
     truncQ = 2, minLen = 50, rm.phix = TRUE, compress = TRUE, multithread = TRUE)  # on windows, set multithread = FALSE
 head(out)
 ```
@@ -175,7 +177,7 @@ head(track)
 seq.tab2 <- as.data.frame( (seqtab.nochim))
 names <- paste("Seq", seq(1:length(seq.tab2[1,])))
 names(seq.tab2)<- names
-write.csv(t(seq.tab2), here("data", "asv_tab_forward.csv"))
+write.csv(t(seq.tab2), here("data", "asv_tab_forward_long.csv"))
 
 #head(seq.tab2)
 
@@ -197,5 +199,5 @@ unite.ref <- "/Users/Gabe/Desktop/phd/ghecto/unite_db/sh_general_release_s_10.05
 
 unite.taxa = assignTaxonomy(seqtab.nochim, unite.ref, multithread = TRUE, tryRC = TRUE)
 
-write.csv(unite.taxa, here("fungal_sequencing", "asv_unite..csv"))
+write.csv(unite.taxa, here("fungal_sequencing", "asv_unite_forward..csv"))
 ```
