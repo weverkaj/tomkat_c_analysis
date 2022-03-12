@@ -57,10 +57,10 @@ data_rmn_raw = read_csv(here("data/soil/toka_soil_surveys.csv"))
 ```
 
 ```
-## -- Column specification -------------------------------------------------------------------------------------------------
+## -- Column specification --------------------------------------------------------------------------------------------------
 ## Delimiter: ","
-## chr  (10): Project, Study Area, Transect Name, Point Name, Protocol, Catenal Position, Researcher, Event Remarks, Obs...
-## dbl  (25): Sample Number, Sample Distance, Sample Bearing, Ring Infiltrometer Diameter, Water Volume, Bulk Density Di...
+## chr  (10): Project, Study Area, Transect Name, Point Name, Protocol, Catenal Position, Researcher, Event Remarks, Obse...
+## dbl  (25): Sample Number, Sample Distance, Sample Bearing, Ring Infiltrometer Diameter, Water Volume, Bulk Density Dia...
 ## lgl   (4): Start Time, End Time, Water Infiltration Time 4, Other Observers Names
 ## date  (1): Date
 ## time  (3): Water Infiltration Time 1, Water Infiltration Time 2, Water Infiltration Time 3

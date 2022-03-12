@@ -8,6 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(here)
+library(tidyverse)
 ```
 
 Read in cleanup from other files
@@ -15,9 +16,11 @@ Read in cleanup from other files
 knitr::knit(here("code/soil_data_cleanup.Rmd"))
 knitr::knit(here("code/veg_data_cleanup.Rmd"))
 knitr::knit(here("code/16S_cleanup.Rmd"))
+knitr::knit(here("code/fungal_cleanup.Rmd"))
 ```
 
 
+## Data cleanup
 
 Trim data to intersection of microbial data and change data
 ```{r}
@@ -45,6 +48,12 @@ change_data40 = change_data %>%
   as.data.frame() %>% 
   filter(rownames(.) %in% rownames(new_com_table40)) %>% 
   filter(rownames(.) %in% rownames(otu_standard))
+
+asv_10_match = asv_10 %>% 
+  filter(rownames(.) %in% rownames(change_data10))
+
+asv_40_match = asv_40 %>% 
+  filter(rownames(.) %in% rownames(change_data40))
 
 all_change = bind_rows(change_data10, change_data40)
 
@@ -146,69 +155,13 @@ soil40 = change_data40 %>%
 ```
 
 
-```{r}
-# #remove correlated otu data
-# 
-# explanatory = bind_cols(canopy10, otu10)
-# 
-# otu_cor = cor(explanatory)
-# otu_cor[lower.tri(otu_cor)] <- 0
-# diag(otu_cor) = 0
-# 
-# x = apply(otu_cor, 2, function(x) any(x > 0.7))
-# 
-# # m = otu_cor %>% as.data.frame()
-# 
-# data.new <- explanatory[,!x]
-# 
-# otu10_reduced = data.new[,8:ncol(data.new)]
-
-```
 
 ## Analysis
 2 Strategies: First, try to do unconstrained PCA on each data set, keep enough axes such that >= 80% of variation is explained in c stock or c_change. Then use axes in variance partitioning
 
 Second strategy: try constrained pca on each data set, constrain with c_change or c stock
 
-#### Strategy 1
-
-PCOA
-
-```{r}
-
-# otudist = vegdist(otu_standard_match, method = "bray")
-# otupcoa = cmdscale(otudist, eig = TRUE, k = 3)
-# otu.var.per = (otupcoa$eig/sum(otupcoa$eig))*100
-# otupcoa
-# otuPCOA_scores = scores(otupcoa, choices = c(1:3)) %>% 
-#   as.data.frame()
-# 
-# otuPCOA_scores40 = otuPCOA_scores %>% 
-#   filter(rownames(.) %in% rownames(otu_standard_match40))
-# 
-# otuPCOA_scores10 = otuPCOA_scores %>% 
-#   filter(rownames(.) %in% rownames(otu_standard_match10))
-# 
-# otu_PCOA_w_data = otuPCOA_scores %>% 
-#   as.data.frame() %>% 
-#   bind_cols(all_change)
-# 
-# ggplot(otu_PCOA_w_data, aes(x = Dim1, y = Dim3, color = depth_cm)) + 
-#   geom_point()
-
-```
-
-```{r}
-# 
-# otu10dist = vegdist(otu10, method = "bray")
-# otu10pcoa = cmdscale(otu10dist, eig = TRUE)
-# otu.var.per = (otu10pcoa$eig/sum(otu10pcoa$eig))*100
-# otu10pcoa
-# otu10_scores = otu10pcoa$vectors[,1:3]
-# 
-# ordiplot (otu10pcoa, display = 'sites', type = 'text')
-
-```
+### 16S NMDS
 
 NMDS
 
@@ -216,69 +169,40 @@ NMDS
 
 set.seed(44)
 
-otuNMDS = metaMDS(otu_standard, distance = "bray", k = 2, try = 50, trymax = 100)
-otuNMDS_scores = scores(otuNMDS)
+otuNMDS10 = metaMDS(otu_standard_match10, distance = "bray", k = 2, try = 50, trymax = 100)
+otuNMDS10_scores = scores(otuNMDS10) %>% 
+  as.data.frame()
 
-otuNMDS_scores10 = otuNMDS_scores %>%
-  as.data.frame() %>%
-  filter(rownames(.) %in% rownames(change_data10))
-
-otuNMDS_scores40 = otuNMDS_scores %>%
-  as.data.frame() %>%
-  filter(rownames(.) %in% rownames(change_data40))
+otuNMDS40 = metaMDS(otu_standard_match40, distance = "bray", k = 2, try = 50, trymax = 100)
+otuNMDS40_scores = scores(otuNMDS10) %>% 
+  as.data.frame()
 
 
-
-plot(otuNMDS_scores10$NMDS1, otuNMDS_scores10$NMDS2, xlim = c(-1, 1), ylim = c(-1, 1))
-points(otuNMDS_scores40$NMDS1, otuNMDS_scores40$NMDS2, col = "red")
+# 
+# 
+# plot(otuNMDS_scores10$NMDS1, otuNMDS_scores10$NMDS2, xlim = c(-1, 1), ylim = c(-1, 1))
+# points(otuNMDS_scores40$NMDS1, otuNMDS_scores40$NMDS2, col = "red")
 
 ```
 
 
-
-
 ```{r}
 
-# familydist = vegdist(family_standard_match, method = "bray")
-# familypcoa = cmdscale(familydist, eig = TRUE, k = 3)
-# family.var.per = (familypcoa$eig/sum(familypcoa$eig))*100
-# familypcoa
-# familyPCOA_scores = scores(familypcoa, choices = c(1:3)) %>% 
-#   as.data.frame()
+# phylumNMDS = metaMDS(family_standard, distance = "bray", k = 2, try = 50, trymax = 100)
+# phylumNMDS_scores = scores(phylumNMDS)
 # 
-# familyPCOA_scores40 = familyPCOA_scores %>% 
-#   filter(rownames(.) %in% rownames(family_standard_match40))
+# phylumNMDS_scores10 = phylumNMDS_scores %>%
+#   as.data.frame() %>%
+#   filter(rownames(.) %in% rownames(change_data10))
 # 
-# familyPCOA_scores10 = familyPCOA_scores %>% 
-#   filter(rownames(.) %in% rownames(family_standard_match10))
+# phylumNMDS_scores40 = phylumNMDS_scores %>%
+#   as.data.frame() %>%
+#   filter(rownames(.) %in% rownames(change_data40))
 # 
 # 
-# family_PCOA_w_data = familyPCOA_scores %>% 
-#   as.data.frame() %>% 
-#   bind_cols(all_change)
+# plot(phylumNMDS_scores10$NMDS1, phylumNMDS_scores10$NMDS2, xlim = c(-1, 1), ylim = c(-1, 1))
+# points(phylumNMDS_scores40$NMDS1, phylumNMDS_scores40$NMDS2, col = "red")
 # 
-# ggplot(family_PCOA_w_data, aes(x = Dim1, y = Dim2, color = depth_cm)) + 
-#   geom_point()
-
-```
-
-```{r}
-
-phylumNMDS = metaMDS(family_standard, distance = "bray", k = 2, try = 50, trymax = 100)
-phylumNMDS_scores = scores(phylumNMDS)
-
-phylumNMDS_scores10 = phylumNMDS_scores %>%
-  as.data.frame() %>%
-  filter(rownames(.) %in% rownames(change_data10))
-
-phylumNMDS_scores40 = phylumNMDS_scores %>%
-  as.data.frame() %>%
-  filter(rownames(.) %in% rownames(change_data40))
-
-
-plot(phylumNMDS_scores10$NMDS1, phylumNMDS_scores10$NMDS2, xlim = c(-1, 1), ylim = c(-1, 1))
-points(phylumNMDS_scores40$NMDS1, phylumNMDS_scores40$NMDS2, col = "red")
-
 
 ```
 
@@ -301,6 +225,7 @@ points(phylumNMDS_scores40$NMDS1, phylumNMDS_scores40$NMDS2, col = "red")
 
 ```
 
+### Canopy NMDS
 
 ```{r}
 
@@ -336,6 +261,8 @@ canopyNMDS_scores10 = canopyNMDS_scores40  %>%
 ```
 
 
+### Herbaceous NMDS
+
 ```{r}
 
 vegNMDS40 = metaMDS(veg_data_match40, distance = "bray", k = 2, try = 50, trymax = 100)
@@ -350,6 +277,11 @@ vegNMDS_scores10 = vegNMDS_scores40 %>%
 
 
 ```
+```{r}
+
+```
+
+
 
 ```{r}
 all_veg10 = bind_cols(canopyNMDS_scores10, vegNMDS_scores10)
@@ -360,64 +292,92 @@ all_veg40 = bind_cols(canopyNMDS_scores40, vegNMDS_scores40)
 
 ```
 
+### Fungal NMDS
+```{r}
+
+# fungal_NMDS = metaMDS(asv_all, distance = "bray", k = 2)
+# 
+# fungal_scores10 = scores(fungal_NMDS) %>% 
+#   as.data.frame() %>% 
+#   filter(rownames(.) %in% rownames(asv_10))
+# 
+# fungal_scores40 = scores(fungal_NMDS) %>% 
+#   as.data.frame() %>% 
+#   filter(rownames(.) %in% rownames(asv_40))
+
+
+
+fungal_NMDS10 = metaMDS(asv_10_match, distance = "bray", k = 2, try = 50, trymax = 100)
+
+fungal_scores10 = scores(fungal_NMDS10) %>%
+  as.data.frame()
+
+fungal_NMDS40 = metaMDS(asv_40_match, distance = "bray", k = 2, try = 50, trymax = 100)
+
+fungal_scores40 = scores(fungal_NMDS40) %>%
+  as.data.frame()
+# 
+# plot(fungal_scores10$NMDS1, fungal_scores10$NMDS2, xlim = c(-1, 1), ylim = c(-1, 1))
+# points(fungal_scores40$NMDS1, fungal_scores40$NMDS2, col = "red")
+
+```
+
 
 ```{r}
-c_stock_10 = varpart(z$`2018`, all_veg10, otuNMDS_scores10, soil10)
+c_stock_10 = varpart(z$`2018`, all_veg10, otuNMDS_scores10, fungal_scores10)
 # c_stock_10
 
-plot(c_stock_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Microbes", "Soil Texture"))
+plot(c_stock_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Microbes", "Fungus"))
 
-c_stock_10family = varpart(c_10$`2018`, all_veg10, phylumNMDS_scores10, soil10)
-# c_stock_10
 
-plot(c_stock_10family, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ), cutoff = -0.5)
+
+
+```
+
+```{r}
+c_stock_40 = varpart(c_40$`2018`, all_veg40, otuNMDS_scores40, fungal_scores40)
+
+plot(c_stock_40,  bg = c("green", "brown", "purple"),  Xnames = c("Plants", "Microbes", "Fungus" ))
+
+
+```
+
+### C stocks figure
+
+```{r}
+
+
+png(here("documents/figures/varpar_c_stock.png"), width = 1000, height = 500)
+
+par(mfrow = c(1,2))
+
+plot(c_stock_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus"), main = "0-10 cm")
+title(main = "0-10 cm")
+plot(c_stock_40,  bg = c("green", "brown", "purple"),  Xnames = c("Plants", "Bacteria", "Fungus"), main = "10-40 cm")
+title(main = "10-40 cm")
+
+dev.off()
 
 
 
 ```
 
 
-```{r}
-c_stock_10_veg = varpart(c_10$`2018`, canopyNMDS_scores10, vegNMDS_scores10)
-
-plot(c_stock_10_veg)
-```
-
-```{r}
-c_stock_40 = varpart(c_40$`2018`, all_veg40, otuNMDS_scores40, soil40)
-
-c_stock_40family = varpart(c_40$`2018`, all_veg40, phylumNMDS_scores40, soil40)
-# c_stock_40
-
-
-
-plot(c_stock_40,  bg = c("green", "brown", "purple"),  Xnames = c("Plants", "Microbes", "Soil Texture" ))
-plot(c_stock_40family,  bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ), cutoff = -0.5)
-
-
-
-```
 
 
 
 
 ```{r}
-c_stock_40_veg = varpart(c_40$`2018`, canopyNMDS_scores40, vegNMDS_scores40)
-
-plot(c_stock_40_veg)
-```
-
-```{r}
-c_change_10 = varpart(c_10$change18, all_veg10, otuNMDS_scores10, soil10)
+c_change_10 = varpart(c_10$change18, all_veg10, otuNMDS_scores10, fungal_scores10)
 # c_stock_10
 
-plot(c_change_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil Texture" ))
+plot(c_change_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Fungus" ))
 
-c_change_10family = varpart(c_10$change18, all_veg10, phylumNMDS_scores10, soil10)
-# c_stock_10
-
-plot(c_change_10family, digits= 2,  bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
-
+# c_change_10family = varpart(c_10$change18, all_veg10, phylumNMDS_scores10, soil10)
+# # c_stock_10
+# 
+# plot(c_change_10family, digits= 2,  bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
+# 
 
 # showvarparts(3)
 
@@ -431,25 +391,36 @@ plot(c_change_10_veg)
 ```
 
 ```{r}
-c_change_40 = varpart(c_40$change18, all_veg40, otuNMDS_scores40, soil40)
+c_change_40 = varpart(c_40$change18, all_veg40, otuNMDS_scores40, fungal_scores40)
 # c_stock_10
 
-plot(c_change_40, bg = c("green",  "purple", "brown"), Xnames = c("Plants", "16S", "Soil Texture" ), cutoff = -0.5)
-
-c_change_40family = varpart(c_40$change18, all_veg40, phylumNMDS_scores40, soil40)
-# c_stock_10
-
-plot(c_change_40family, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
+plot(c_change_40, bg = c("green",  "purple", "brown"), Xnames = c("Plants", "16S", "Fungus" ))
+# 
+# c_change_40family = varpart(c_40$change18, all_veg40, phylumNMDS_scores40, soil40)
+# # c_stock_10
+# 
+# plot(c_change_40family, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
 
 
 ```
 
+### change 18 figure
 
 ```{r}
-c_change_40_veg = varpart(c_40$change18, canopyNMDS_scores40, vegNMDS_scores40)
+png(here("documents/figures/varpart_change18.png"), width = 1000, height = 500)
 
-plot(c_change_40_veg)
+par(mfrow = c(1,2))
+
+plot(c_change_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus" ))
+title(main = "0-10 cm")
+plot(c_change_40, bg = c("green",  "purple", "brown"), Xnames = c("Plants", "Bacteria", "Fungus" ))
+title(main = "10-40 cm")
+
+dev.off()
+
+
 ```
+
 
 ```{r}
 otu_scores_change10 = otuNMDS_scores10 %>% 
@@ -464,11 +435,11 @@ c_change_surface = c_change %>%
 c_change_deep = c_change %>% 
   filter(rownames(.) %in% rownames(otu_scores_change40))
 
-phylum_scores_change10 = phylumNMDS_scores10 %>% 
-  filter(rownames(.) %in% rownames(c_change))
-
-phylum_scores_change40 = phylumNMDS_scores40 %>% 
-  filter(rownames(.) %in% rownames(c_change))
+# phylum_scores_change10 = phylumNMDS_scores10 %>% 
+#   filter(rownames(.) %in% rownames(c_change))
+# 
+# phylum_scores_change40 = phylumNMDS_scores40 %>% 
+#   filter(rownames(.) %in% rownames(c_change))
 
 veg_scores_change10 = vegNMDS_scores10 %>% 
   filter(rownames(.) %in% rownames(c_change))
@@ -494,39 +465,61 @@ soil40_change = soil40 %>%
 soil10_change = soil10 %>% 
   filter(rownames(.) %in% rownames(c_change))
 
+fungal10_change = fungal_scores10 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+fungal40_change = fungal_scores40 %>% 
+  filter(rownames(.) %in% rownames(c_change))
+
+
 ```
 
 ```{r}
 
-c_change_40_21 = varpart(c_change_deep$change21, all_veg_scores_change40, otu_scores_change40, soil40_change)
+c_change_40_21 = varpart(c_change_deep$change21, all_veg_scores_change40, otu_scores_change40, fungal40_change)
 # c_stock_10
-plot(c_change_40_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil" ))
+plot(c_change_40_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Fungus" ))
 
-c_change_40family_21 = varpart(c_change_deep$change21, all_veg_scores_change40, phylum_scores_change40, soil40_change)
-# c_stock_10
-plot(c_change_40family_21, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
+# c_change_40family_21 = varpart(c_change_deep$change21, all_veg_scores_change40, phylum_scores_change40, soil40_change)
+# # c_stock_10
+# plot(c_change_40family_21, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
 
 ```
-```{r}
-c_change_40_21_veg = varpart(c_change_deep$change21, veg_scores_change40, canopy_scores_change40)
 
-plot(c_change_40_21_veg)
-```
 
 
 
 ```{r}
 
-c_change_10_21 = varpart(c_change_surface$change21, veg_scores_change10, otu_scores_change10, soil10_change)
+c_change_10_21 = varpart(c_change_surface$change21, veg_scores_change10, otu_scores_change10, fungal10_change)
 # c_stock_10
-plot(c_change_10_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Soil Texture" ))
+plot(c_change_10_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Fungus" ))
 
-
-c_change_10family_21 = varpart(c_change_surface$change21, veg_scores_change10, phylum_scores_change10, soil10_change)
-# c_stock_10
-plot(c_change_10family_21, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
+# 
+# c_change_10family_21 = varpart(c_change_surface$change21, veg_scores_change10, phylum_scores_change10, soil10_change)
+# # c_stock_10
+# plot(c_change_10family_21, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
 
 ```
+### future plot
+
+```{r}
+
+png(here("documents/figures/varpart_change21.png"), width = 1000, height = 500)
+
+par(mfrow = c(1,2))
+
+plot(c_change_10_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus" ))
+title(main = "0-10 cm")
+plot(c_change_40_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus" ))
+title(main = "10-40 cm")
+
+dev.off()
+
+
+```
+```
+
 
 ```{r}
 # otu_data10 = bind_cols(c_10, otuNMDS_scores10)
