@@ -147,6 +147,13 @@ c_40 = change_data40 %>%
 soil40 = change_data40 %>% 
   select(sand, silt, clay)
 
+soil_change =  change %>% 
+  mutate(id = case_when(depth_cm == "10 to 40" ~ paste(point_id, "-40", sep = ""),
+                        depth_cm == "0 to 10" ~ paste(point_id, "-10", sep = ""))
+         ) %>% 
+  column_to_rownames("id")
+
+
 # change_data_vp10 = change_data10 %>% 
 
 ```
@@ -169,7 +176,9 @@ colnames(microbe_richness) = "richness"
 microbe_diversity_soil = microbe_diversity %>% 
   rownames_to_column() %>% 
   left_join(microbe_richness %>% rownames_to_column(), by = "rowname") %>% 
-  left_join(soil_change %>% rownames_to_column(), by = "rowname")
+  left_join(soil_change %>% rownames_to_column(), by = "rowname") %>% 
+  mutate(depth = case_when(depth_cm == "0 to 10" ~ "0-10 cm",
+                           depth_cm == "10 to 40" ~ "10-40 cm"))
 
 richness_sum = microbe_diversity_soil %>% 
   group_by(depth_cm) %>% 
@@ -183,16 +192,17 @@ microbe_diversity_soil40 = microbe_diversity_soil %>%
 
 ```
 ###plot
-
 ```{r}
-(asv_richness = ggplot(microbe_diversity_soil, aes(x = richness, y = `2018`, color = depth_cm)) +
+
+
+(asv_richness = ggplot(microbe_diversity_soil, aes(x = richness, y = `2018`)) +
   geom_point() +
-  facet_wrap(. ~ depth_cm) +
-  geom_smooth(method = "lm") +
-  scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") +
+  facet_wrap(. ~ depth) +
+  geom_smooth(method = "lm", linetype = "dashed", color = "black") +
+  # scale_color_manual(values = c("darkgreen", "purple"),  labels = c("0-10 cm", "10-40 cm"), name = "Depth") +
   theme_bw() +
   ylab("% SOC 2018") +
-  xlab("ASV richness"))
+  xlab("ASV Richness 2018"))
 
 ggsave(here::here("documents/figures/ASV_richness.png"), dpi = 300, plot = asv_richness, device = "png", width = 8, height = 6)
 
@@ -589,6 +599,9 @@ fam_carbon_10 = family_standard_10 %>%
   rownames_to_column() %>% 
   left_join(change_mat10_complete %>% select(`2018`, change18) %>% rownames_to_column(), by = "rowname") %>% 
   column_to_rownames("rowname")
+
+family_standard_40 = family_standard_match40 %>% 
+  select_if(colSums(.) != 0)
 
 fam_carbon_40 = family_standard_40 %>% 
   rownames_to_column() %>% 
@@ -1022,19 +1035,26 @@ summary(m)
 ```{r}
 
 
+toka_c_otu_points = toka_c_points %>% 
+  filter(!is.na(`2021`))
+
 toka_future_covariates = toka_c_otu_points %>% 
   select(`2015`, `2018`, change18, change21, depth) %>% 
   rownames_to_column() %>% 
-  left_join(change_mat %>% rownames_to_column(), by = c("rowname", "2018", "change18")) %>% 
-  column_to_rownames("rowname") %>% 
-  filter(!is.na(change21))
+  left_join(change_mat %>% rownames_to_column(), by = c("rowname", "2018", "change18", "change21")) %>% 
+  column_to_rownames("rowname")
 
 otu_future = otu_standard_match %>% 
   filter(rownames(.) %in% rownames(toka_future_covariates))
 
 
-toka_c_otu_points = toka_c_points %>% 
-  filter(rownames(.) %in% rownames(otu_future))
+
+
+
+
+
+
+
 ```
 
 
@@ -2106,6 +2126,19 @@ vrda_mod = lm(change18 ~ PC1 + PC2, data = vrda_scores)
 summary(vrda_mod)
 ```
 
+# Fungal analyses
+
+
+
+## full community
+```{r}
+
+ASV_tab = asv_table_standard %>% 
+  filter(rowSums(.) > 0)
+
+ASV_ord_all = metaMDS(com_table, distance = "bray", k = 3, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
+
+```
 
 
 

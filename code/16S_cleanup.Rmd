@@ -23,10 +23,6 @@ shannon = read_tsv(here("data/16S/shannon.tsv"))
 
 ```
 
-```{r}
-
-```
-
 
 ```{r}
 otu_straight = otu_table %>% 

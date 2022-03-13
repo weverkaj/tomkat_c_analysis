@@ -57,10 +57,10 @@ data_rmn_raw = read_csv(here("data/soil/toka_soil_surveys.csv"))
 ```
 
 ```
-## -- Column specification --------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------
 ## Delimiter: ","
-## chr  (10): Project, Study Area, Transect Name, Point Name, Protocol, Catenal Position, Researcher, Event Remarks, Obse...
-## dbl  (25): Sample Number, Sample Distance, Sample Bearing, Ring Infiltrometer Diameter, Water Volume, Bulk Density Dia...
+## chr  (10): Project, Study Area, Transect Name, Point Name, Protocol, Catenal Position, Researcher, Event Remarks, Obs...
+## dbl  (25): Sample Number, Sample Distance, Sample Bearing, Ring Infiltrometer Diameter, Water Volume, Bulk Density Di...
 ## lgl   (4): Start Time, End Time, Water Infiltration Time 4, Other Observers Names
 ## date  (1): Date
 ## time  (3): Water Infiltration Time 1, Water Infiltration Time 2, Water Infiltration Time 3
@@ -321,7 +321,7 @@ summary(p_h)
 plot(p_h)
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png)![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-2.png)![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-3.png)![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-4.png)
+![plot of chunk unnamed-chunk-35](figure/unnamed-chunk-35-1.png)![plot of chunk unnamed-chunk-35](figure/unnamed-chunk-35-2.png)![plot of chunk unnamed-chunk-35](figure/unnamed-chunk-35-3.png)![plot of chunk unnamed-chunk-35](figure/unnamed-chunk-35-4.png)
 
 ```r
 ggplot(change, aes(x = p_h2018, y = `2018`, color = depth_cm)) +
@@ -341,6 +341,6 @@ ggplot(change, aes(x = p_h2018, y = `2018`, color = depth_cm)) +
 ## Warning: Removed 22 rows containing missing values (geom_point).
 ```
 
-![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9-1.png)
+![plot of chunk unnamed-chunk-36](figure/unnamed-chunk-36-1.png)
 
 
