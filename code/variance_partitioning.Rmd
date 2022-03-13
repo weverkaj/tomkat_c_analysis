@@ -174,7 +174,7 @@ otuNMDS10_scores = scores(otuNMDS10) %>%
   as.data.frame()
 
 otuNMDS40 = metaMDS(otu_standard_match40, distance = "bray", k = 2, try = 50, trymax = 100)
-otuNMDS40_scores = scores(otuNMDS10) %>% 
+otuNMDS40_scores = scores(otuNMDS40) %>% 
   as.data.frame()
 
 
@@ -324,7 +324,7 @@ fungal_scores40 = scores(fungal_NMDS40) %>%
 
 
 ```{r}
-c_stock_10 = varpart(z$`2018`, all_veg10, otuNMDS_scores10, fungal_scores10)
+c_stock_10 = varpart(z$`2018`, all_veg10, otuNMDS10_scores, fungal_scores10)
 # c_stock_10
 
 plot(c_stock_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Microbes", "Fungus"))
@@ -335,7 +335,7 @@ plot(c_stock_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Micro
 ```
 
 ```{r}
-c_stock_40 = varpart(c_40$`2018`, all_veg40, otuNMDS_scores40, fungal_scores40)
+c_stock_40 = varpart(c_40$`2018`, all_veg40, otuNMDS40_scores, fungal_scores40)
 
 plot(c_stock_40,  bg = c("green", "brown", "purple"),  Xnames = c("Plants", "Microbes", "Fungus" ))
 
@@ -368,7 +368,7 @@ dev.off()
 
 
 ```{r}
-c_change_10 = varpart(c_10$change18, all_veg10, otuNMDS_scores10, fungal_scores10)
+c_change_10 = varpart(c_10$change18, all_veg10, otuNMDS10_scores, fungal_scores10)
 # c_stock_10
 
 plot(c_change_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Fungus" ))
@@ -391,7 +391,7 @@ plot(c_change_10_veg)
 ```
 
 ```{r}
-c_change_40 = varpart(c_40$change18, all_veg40, otuNMDS_scores40, fungal_scores40)
+c_change_40 = varpart(c_40$change18, all_veg40, otuNMDS40_scores, fungal_scores40)
 # c_stock_10
 
 plot(c_change_40, bg = c("green",  "purple", "brown"), Xnames = c("Plants", "16S", "Fungus" ))
@@ -423,10 +423,10 @@ dev.off()
 
 
 ```{r}
-otu_scores_change10 = otuNMDS_scores10 %>% 
+otu_scores_change10 = otuNMDS10_scores %>% 
   filter(rownames(.) %in% rownames(c_change))
 
-otu_scores_change40 = otuNMDS_scores40 %>% 
+otu_scores_change40 = otuNMDS40_scores %>% 
   filter(rownames(.) %in% rownames(c_change))
 
 c_change_surface = c_change %>% 
@@ -518,7 +518,6 @@ dev.off()
 
 
 ```
-```
 
 
 ```{r}
@@ -533,11 +532,35 @@ dev.off()
 # summary(otu_model_40)
 
 ```
-Veg only    
+
+### All Plots
 
 ```{r}
 
+png(here("documents/figures/varpart_all.png"), width = 1200, height = 1600)
 
 
+par(mfrow = c(3,2))
+
+#stocks
+plot(c_stock_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus"), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+title(main = "A. %Organic C, 0-10 cm", cex.main = 2.5)
+plot(c_stock_40,  bg = c("green", "brown", "purple"),  Xnames = c("Plants", "Bacteria", "Fungus"), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+title(main = "B. %Organic C, 10-40 cm", cex.main = 2.5)
+
+#change 18
+plot(c_change_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+title(main = "C. Change 2015-2018 %Organic C, 0-10 cm", cex.main = 2.5)
+plot(c_change_40, bg = c("green",  "purple", "brown"), Xnames = c("Plants", "Bacteria", "Fungus" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+title(main = "D. Change 2015-2018 %Organic C, 10-40 cm", cex.main = 2.5)
+
+#change 21
+plot(c_change_10_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+title(main = "E. Change 2018-2021 %Organic C, 0-10 cm", cex.main = 2.5)
+plot(c_change_40_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+title(main = "F. Change 2018-2021 %Organic C, 10-40 cm", cex.main = 2.5)
+
+
+dev.off()
 ```
 

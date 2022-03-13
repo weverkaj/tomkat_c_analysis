@@ -255,21 +255,7 @@ releve = read_csv(here("data/veg/toka_releve.csv")) %>%
 ```
 
 ```
-## Rows: 1539 Columns: 8
-```
-
-```
-## -- Column specification --------------------------------------------------------------------------------------------------
-## Delimiter: ","
-## chr  (5): Study Area, Transect Name, Point Id, Vegetation Type, USDA Code
-## dbl  (2): Percent Cover, Height
-## date (1): Event Date
-```
-
-```
-## 
-## i Use `spec()` to retrieve the full column specification for this data.
-## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+## Error in clean_names(.): could not find function "clean_names"
 ```
 
 ```r
@@ -284,13 +270,7 @@ woody_cover = releve %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'point_id', 'year'. You can override using the `.groups` argument.
-```
-
-```
-## `mutate_all()` ignored the following grouping variables:
-## Columns `point_id`, `year`
-## Use `mutate_at(df, vars(-group_cols()), myoperation)` to silence the message.
+## Error in filter(., vegetation_type == "trees" | vegetation_type == "shrubs"): object 'releve' not found
 ```
 
 ```r
@@ -303,7 +283,7 @@ woody_total = releve %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'point_id'. You can override using the `.groups` argument.
+## Error in filter(., vegetation_type == "trees" | vegetation_type == "shrubs"): object 'releve' not found
 ```
 
 ```r
@@ -318,10 +298,7 @@ tree_cover = releve %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'point_id', 'year'. You can override using the `.groups` argument.
-## `mutate_all()` ignored the following grouping variables:
-## Columns `point_id`, `year`
-## Use `mutate_at(df, vars(-group_cols()), myoperation)` to silence the message.
+## Error in filter(., vegetation_type == "trees"): object 'releve' not found
 ```
 
 ```r
@@ -334,7 +311,7 @@ tree_total = releve %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'point_id'. You can override using the `.groups` argument.
+## Error in filter(., vegetation_type == "trees"): object 'releve' not found
 ```
 
 ```r
@@ -349,10 +326,7 @@ shrub_cover = releve %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'point_id', 'year'. You can override using the `.groups` argument.
-## `mutate_all()` ignored the following grouping variables:
-## Columns `point_id`, `year`
-## Use `mutate_at(df, vars(-group_cols()), myoperation)` to silence the message.
+## Error in filter(., vegetation_type == "shrubs"): object 'releve' not found
 ```
 
 ```r
@@ -365,7 +339,7 @@ shrub_total = releve %>%
 ```
 
 ```
-## `summarise()` has grouped output by 'point_id'. You can override using the `.groups` argument.
+## Error in filter(., vegetation_type == "shrub"): object 'releve' not found
 ```
 
 
@@ -485,6 +459,13 @@ year_dist = vegdist(com_change_table, method = "bray") %>%
 
 veg_point_distance = data_frame(distance = diag(year_dist)) %>% 
   mutate(points = rownames(year_dist))
+```
+
+```
+## Warning: `data_frame()` was deprecated in tibble 1.1.0.
+## Please use `tibble()` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
 ```
 
 

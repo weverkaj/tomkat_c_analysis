@@ -321,7 +321,7 @@ summary(p_h)
 plot(p_h)
 ```
 
-![plot of chunk unnamed-chunk-48](figure/unnamed-chunk-48-1.png)![plot of chunk unnamed-chunk-48](figure/unnamed-chunk-48-2.png)![plot of chunk unnamed-chunk-48](figure/unnamed-chunk-48-3.png)![plot of chunk unnamed-chunk-48](figure/unnamed-chunk-48-4.png)
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png)![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-2.png)![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-3.png)![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-4.png)
 
 ```r
 ggplot(change, aes(x = p_h2018, y = `2018`, color = depth_cm)) +
@@ -341,6 +341,6 @@ ggplot(change, aes(x = p_h2018, y = `2018`, color = depth_cm)) +
 ## Warning: Removed 22 rows containing missing values (geom_point).
 ```
 
-![plot of chunk unnamed-chunk-49](figure/unnamed-chunk-49-1.png)
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9-1.png)
 
 
