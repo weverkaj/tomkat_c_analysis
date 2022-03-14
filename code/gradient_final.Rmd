@@ -13,6 +13,7 @@ library(here)
 library(janitor)
 library(ggpubr)
 library(calecopal)
+library(lubridate)
 
 ```
 
@@ -80,7 +81,8 @@ points_c_depth = visits_c %>%
 
 #all points
 toka_c_points = bind_rows(points_c_surface, points_c_depth) %>% 
-  column_to_rownames("id")
+  column_to_rownames("id") %>% 
+  mutate(depth = as.factor(depth))
 
 ```
 
@@ -433,33 +435,122 @@ veg_change_com = com_table21_change - com_table18_change
 
 ```{r}
 
+otu_standard_match = otu_standard %>% 
+  filter(rownames(.) %in% rownames(toka_c_points))
+
 otu_standard_match10 = otu_standard %>% 
-  filter(rownames(.) %in% rownames(change_data10)) %>% 
+  filter(rownames(.) %in% rownames(change10)) %>% 
   as.data.frame()
 
 otu_standard_match40 = otu_standard %>% 
-  filter(rownames(.) %in% rownames(change_data40)) %>% 
+  filter(rownames(.) %in% rownames(change40)) %>% 
   as.data.frame()
 
 ```
 
 
-## All 16S
+## Diversity
+
+### calculate diversity
+
 ```{r}
-NMS16S = metaMDS(otu_standard_match, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
+microbe_diversity = diversity(otu_standard_match) %>% 
+  as.data.frame() %>% 
+  clean_names() %>% 
+  rename(diversity = x)
+
+microbe_richness = specnumber(otu_standard_match) %>% 
+  as.data.frame() %>% 
+  clean_names() %>% 
+  rename(richness = x)
+
+microbe_diversity_soil = microbe_diversity %>% 
+  rownames_to_column() %>% 
+  left_join(microbe_richness %>% rownames_to_column(), by = "rowname") %>% 
+  left_join(toka_c_points %>% rownames_to_column(), by = "rowname")
+  
+richness_sum = microbe_diversity_soil %>% 
+  group_by(depth) %>% 
+  summarize(richness_mean = mean(richness), richness_sd = sd(richness))
+
+microbe_diversity_soil10 = microbe_diversity_soil %>% 
+  filter(depth == 10)
+
+microbe_diversity_soil40 = microbe_diversity_soil %>% 
+  filter(depth == 40)
+
+
+print(richness_sum)
 ```
 
+### diversity linear models
+```{r}
+divmod_surf = lm(`2018` ~ richness, data = microbe_diversity_soil) #significant <----
+summary(divmod_surf)
+
+divmod_depth = lm(`2018` ~ richness, data = microbe_diversity_soil40) #not significant
+summary(divmod_depth)
+
+divmod_depth_change = lm(change18 ~ richness, data = microbe_diversity_soil40) #not significant
+summary(divmod_depth_change)
+
+divmod_surf_change = lm(change18 ~ richness, data = microbe_diversity_soil10) #not significant
+summary(divmod_surf_change)
 
 
+divmod_surf_future = lm(change21 ~ richness, data = microbe_diversity_soil10) #not significant
+summary(divmod_surf_future)
+
+divmod_depth_future = lm(change21 ~ richness, data = microbe_diversity_soil40) #marginally significant
+summary(divmod_depth_future)
+
+divmod_future = lm(change21 ~ richness + depth, data = microbe_diversity_soil) #significant <----
+summary(divmod_future)
+
+divmod_future_int = lm(change21 ~ richness*depth, data = microbe_diversity_soil) #significant but worse
+summary(divmod_future_int)
 
 
+divmod_current = lm(`2018` ~ richness + depth, data = microbe_diversity_soil) #significant
+summary(divmod_current)
+
+divmod_current_int = lm(`2018` ~ richness*depth, data = microbe_diversity_soil) #significant but worse
+summary(divmod_current_int)
+
+AIC(divmod_current, divmod_current_int)
+
+```
+
+```{r}
+
+(bact_richness = ggplot(microbe_diversity_soil, aes(x = richness, y = `2018`)) +
+  geom_point() +
+  facet_wrap(. ~ depth) +
+  geom_smooth(method = "lm", linetype = "dashed", color = "black") +
+  # scale_color_manual(values = c("darkgreen", "purple"),  labels = c("0-10 cm", "10-40 cm"), name = "Depth") +
+  theme_bw() +
+  ylab("% SOC 2018") +
+  xlab("ASV Richness 2018"))
+
+ggsave(here::here("documents/figures/bact_richness_soc.png"), dpi = 300, plot = bact_richness, device = "png", width = 8, height = 6)
+
+```
+
+```{r}
+
+(bact_richness_change = ggplot(microbe_diversity_soil, aes(x = richness, y = change21)) +
+  geom_point() +
+  facet_wrap(. ~ depth) +
+  geom_smooth(method = "lm", linetype = "dashed", color = "black") +
+  # scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") +
+  theme_bw() +
+  ylab("Change % SOC 2018-2021") +
+  xlab("ASV richness"))
+
+ggsave(here::here("documents/figures/bact_richness_future_change.png"), dpi = 300, plot = bact_richness_change, device = "png", width = 8, height = 6)
 
 
-
-
-
-
-
+```
 
 
 
