@@ -191,7 +191,8 @@ asv_table_standard = asv_table %>%
   t() %>% 
   decostand(method = "total") %>% 
   t() %>% 
-  as.data.frame()
+  as.data.frame() %>% 
+  select(-`TOKA-099-10`)
 
 asv_table_guilds = asv_table_standard %>% 
   rownames_to_column() %>% 
@@ -938,7 +939,7 @@ depth_scores40_complete
 depth_scores40_complete_no
 
 ```
-
+## final NMDS figures
 
 ```{r}
 (bact_NMDS_all = ggarrange(plot16s_10, plot16s_40, common.legend = F, legend = "right", ncol = 1, labels = "AUTO")  +
@@ -1316,3 +1317,416 @@ ggsave(here::here("documents/figures/bact_function_future.png"), dpi = 300, plot
 
 ```
 
+# Fungal Analyses
+
+
+## Diversity
+```{r}
+
+fungal_diversity = diversity(asv_all) %>% 
+  as.data.frame() %>% 
+  clean_names() %>% 
+  rename(diversity = x)
+
+fungal_richness = specnumber(asv_all) %>% 
+  as.data.frame() %>% 
+  clean_names() %>% 
+  rename(richness = x)
+
+fungal_diversity_soil = fungal_diversity %>% 
+  rownames_to_column() %>% 
+  left_join(fungal_richness %>% rownames_to_column(), by = "rowname") %>% 
+  left_join(toka_c_points %>% rownames_to_column(), by = "rowname")
+
+fungal_richness_sum = fungal_diversity_soil %>% 
+  group_by(depth) %>% 
+  summarize(richness_mean = mean(richness, na.rm = T), richness_sd = sd(richness, na.rm = T))
+
+fungal_diversity_soil10 = fungal_diversity_soil %>% 
+  filter(depth == 10)
+
+fungal_diversity_soil40 = fungal_diversity_soil %>% 
+  filter(depth == 40)
+
+
+print(fungal_richness_sum)
+```
+
+
+
+```{r}
+
+fung_surf_current = lm(`2018` ~ richness, data = fungal_diversity_soil10)
+summary(fung_surf_current)
+
+fung_surf_current_no = lm(`2018` ~ richness, data = fungal_diversity_soil10 %>% filter(`2018` < 7))
+summary(fung_surf_current_no)
+
+fung_depth_current = lm(`2018` ~ richness, data = fungal_diversity_soil40)
+summary(fung_depth_current)
+
+fung_surf_recent = lm(change18 ~ richness, data = fungal_diversity_soil10)
+summary(fung_surf_recent)
+
+fung_depth_recent = lm(change18 ~ richness, data = fungal_diversity_soil40)
+summary(fung_depth_recent)
+
+fung_surf_future = lm(change21 ~ richness, data = fungal_diversity_soil10)
+summary(fung_surf_future)
+
+fung_depth_future = lm(change21 ~ richness, data = fungal_diversity_soil40)
+summary(fung_depth_future)
+
+```
+```{r}
+  plot(fung_surf_current_no)
+```
+### plot
+```{r}
+
+(fung_richness = ggplot(fungal_diversity_soil, aes(x = richness, y = `2018`)) +
+  geom_point() +
+  facet_wrap(. ~ depth_text) +
+  geom_smooth(method = "lm", linetype = "dashed", color = "black") +
+  # scale_color_manual(values = c("darkgreen", "purple"),  labels = c("0-10 cm", "10-40 cm"), name = "Depth") +
+  theme_bw() +
+  ylab("% SOC 2018") +
+  xlab("Fungal ASV Richness 2018"))
+
+ggsave(here::here("documents/figures/fungal_diversity_2018.png"), dpi = 300, plot = fung_richness, device = "png", width = 8, height = 6)
+
+
+```
+
+## NMDS ALL
+
+```{r}
+NMDS_fungal_all = metaMDS(asv_all, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
+
+NMDS_fungal_all
+
+
+```
+
+```{r}
+
+scores_fungal_all = as.data.frame(scores(NMDS_fungal_all))
+
+
+depth_scores_fungus = envfit(scores_fungal_all, change_mat, nperm = 999, na.rm = T)
+depth_scores_fungus_plot = as.data.frame(scores(depth_scores_fungus, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
+                              rowname == "2018" ~ "% Organic C",
+                              rowname == "change21" ~ "Future % Change"))
+
+depth_scores_fungus_complete = envfit(scores_fungal_all, change_mat_complete, nperm = 999, na.rm = T)
+
+
+depth_scores_fungus_plot_complete = as.data.frame(scores(depth_scores_complete, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
+                              rowname == "2018" ~ "% Organic C",
+                              rowname == "c_pc_change" ~ "% Carbon Change (Relative)",
+                              rowname == "cn_change" ~ "C:N ratio change",
+                              rowname == "n_2018" ~ "% Nitrogen",
+                              rowname == "c_n_ratio" ~ "C:N ratio",
+                              rowname == "change21" ~ "Future % Change",
+                              rowname == "sand" | rowname == "silt" | rowname == "clay" ~ rowname))
+
+function_fung = envfit(scores_fungal_all, fungal_func_sum, nperm = 999, na.rm = TRUE)
+fung_function_scores = as.data.frame(scores(function_fung, display = "vectors")) %>% 
+  rownames_to_column()
+
+scores_fungal_all = as.data.frame(scores(NMDS_fungal_all)) %>% 
+  rownames_to_column() %>% 
+  left_join(change_mat_complete %>% rownames_to_column(), by = "rowname") %>% 
+  mutate(depth_cm = as.factor(depth))
+
+surface_grp_fung = scores_fungal_all[scores_fungal_all$depth == 10,][chull(scores_fungal_all[scores_fungal_all$depth_cm == 10, c("NMDS1", "NMDS2")]),]
+
+depth_grp_fung = scores_fungal_all[scores_fungal_all$depth_cm == 40,][chull(scores_fungal_all[scores_fungal_all$depth_cm == 40, c("NMDS1", "NMDS2")]),]
+
+hull_data = rbind(surface_grp_fung, depth_grp_fung)
+
+NMDS.mean_fung = aggregate(scores_fungal_all[,1:2],list(group=scores_fungal_all$depth_cm),mean)
+
+
+veganCovEllipse<-function (cov, center = c(0, 0), scale = 1, npoints = 100) 
+{
+  theta <- (0:npoints) * 2 * pi/npoints
+  Circle <- cbind(cos(theta), sin(theta))
+  t(center + scale * t(Circle %*% chol(cov)))
+}
+
+df_ell_fung <- data.frame()
+for(g in levels(scores_fungal_all$depth_cm)){
+  df_ell_fung <- rbind(df_ell_fung, cbind(as.data.frame(with(scores_fungal_all[scores_fungal_all$depth_cm==g,],
+                                                   veganCovEllipse(cov.wt(cbind(NMDS1,NMDS2),wt=rep(1/length(NMDS1),length(NMDS1)))$cov,center=c(mean(NMDS1),mean(NMDS2)))))
+                                ,group=g))
+}
+
+```
+
+### plot
+
+```{r}
+ggplot(scores_fungal_all, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = depth_cm), size = 4) +
+  geom_path(data = df_ell_fung, aes(x = NMDS1, y = NMDS2, color = group), size = 1, linetype = 2) +
+  scale_color_manual(values = c("darkgreen", "purple"), labels = c("0-10 cm", "10-40cm"), name = "Depth") + 
+  scale_fill_manual(values = c("darkgreen", "purple"), labels = c("0-10 cm", "10-40cm"), name = "Depth") +
+  geom_text(data = fung_function_scores, mapping = aes(x = NMDS1, y = NMDS2, label = rowname), color = "black", size = 3) +
+  geom_text(aes(label = paste("stress = ", round(NMDS_fungal_all$stress, 3)), x = 0.4, y = -.4), size = 4, color = "black") +
+  theme_bw()
+
+```
+
+## NMDS 10
+
+```{r}
+NMDS_fungal_10 = metaMDS(asv_10, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+NMDS_fungal_10
+```
+### envfit
+
+
+
+```{r}
+scores_fungal_10 = as.data.frame(scores(NMDS_fungal_10))
+
+depth_scores_fungal10_complete = envfit(scores_fungal_10, change10_complete, nperm = 999, na.rm = T)
+
+depth_scores_fungal_plot10_complete = as.data.frame(scores(depth_scores_fungal10_complete, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
+                              rowname == "2018" ~ "% Organic C (2018)"))
+
+
+fungal_func10 = fungal_func_sum %>% 
+  filter(rownames(.) %in% rownames(scores_fungal_10))
+
+fung_function10 = envfit(scores_fungal_10, fungal_func10, nperm = 999, na.rm = TRUE)
+
+fung_function_scores10 = as.data.frame(scores(fung_function10, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  left_join(as.data.frame(fung_function10$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>%
+  filter(`fung_function10$vectors$pvals` <= .1 )
+
+scores_fungal_10 = as.data.frame(scores(NMDS_fungal_10)) %>% 
+  rownames_to_column() %>% 
+  left_join(change10_complete %>% rownames_to_column(), by = "rowname") 
+
+
+```
+
+
+
+### no outlier
+
+```{r}
+asv_10_no = asv_10 %>% 
+  filter(rownames(.) %in% rownames(ff))
+
+NMDS_fungal_10_no = metaMDS(asv_10_no, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+NMDS_fungal_10
+```
+
+```{r}
+scores_fungal_10_no = as.data.frame(scores(NMDS_fungal_10_no))
+
+depth_scores_fungal10_complete_no = envfit(scores_fungal_10_no, ff, nperm = 999, na.rm = T)
+
+depth_scores_fungal_plot10_complete_no = as.data.frame(scores(depth_scores_fungal10_complete_no, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
+                              rowname == "2018" ~ "% Organic C (2018)"))
+
+
+fungal_func10_no = fungal_func_sum %>% 
+  filter(rownames(.) %in% rownames(scores_fungal_10_no))
+
+fung_function10_no = envfit(scores_fungal_10_no, fungal_func10_no, nperm = 999, na.rm = TRUE)
+
+fung_function_scores10_no = as.data.frame(scores(fung_function10_no, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  left_join(as.data.frame(fung_function10_no$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>%
+  filter(`fung_function10_no$vectors$pvals` <= .1 )
+
+scores_fungal_10_no = as.data.frame(scores(NMDS_fungal_10_no)) %>% 
+  rownames_to_column() %>% 
+  left_join(ff %>% rownames_to_column(), by = "rowname") 
+
+
+```
+
+### plots
+
+```{r}
+(fung_plot10 = ggplot(scores_fungal_10, aes(NMDS1, NMDS2, color = `2018`)) +
+  geom_point(size = 3) +
+  geom_segment(data = depth_scores_fungal_plot10_complete, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "blue", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text(data = depth_scores_fungal_plot10_complete, aes(label = variable),
+            size = 4, color = "black") +
+  # geom_text(data = fung_function_scores10, mapping = aes(x = NMDS1, y = NMDS2, label = rowname), color = "blue") +
+  scale_color_viridis_b(name = "% Organic C") +
+  geom_text(aes(label = paste("stress = ", round(NMDS_fungal_10$stress, 3)), x = -0.4, y = -.6), size = 4, color = "black") +
+  theme_bw())
+
+```
+```{r}
+(fung_plot10_no = ggplot(scores_fungal_10_no, aes(NMDS1, NMDS2, color = `2018`)) +
+  geom_point(size = 3) +
+  geom_segment(data = depth_scores_fungal_plot10_complete_no, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "blue", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text(data = depth_scores_fungal_plot10_complete_no, aes(label = variable),
+            size = 4, color = "black") +
+  # geom_text(data = fung_function_scores10, mapping = aes(x = NMDS1, y = NMDS2, label = rowname), color = "blue") +
+  scale_color_viridis_b(name = "% Organic C") +
+  geom_text(aes(label = paste("stress = ", round(NMDS_fungal_10_no$stress, 3)), x = -0.4, y = -.6), size = 4, color = "black") +
+  theme_bw())
+```
+### statistic report
+```{r}
+depth_scores_fungal10_complete
+depth_scores_fungal10_complete_no
+
+```
+## NMDS 40
+
+```{r}
+NMDS_fungal_40 = metaMDS(asv_40, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+NMDS_fungal_40
+```
+
+
+### envfit
+
+
+
+```{r}
+
+scores_fungal_40 = as.data.frame(scores(NMDS_fungal_40))
+
+depth_scores_fungal40_complete = envfit(scores_fungal_40, change40_complete, nperm = 999, na.rm = T)
+
+depth_scores_fungal_plot40_complete = as.data.frame(scores(depth_scores_fungal40_complete, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
+                              rowname == "2018" ~ "% Organic C (2018)"))
+
+
+fungal_func40 = fungal_func_sum %>% 
+  filter(rownames(.) %in% rownames(scores_fungal_40))
+
+fung_function40 = envfit(scores_fungal_40, fungal_func40, nperm = 999, na.rm = TRUE)
+
+fung_function_scores40 = as.data.frame(scores(fung_function40, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  left_join(as.data.frame(fung_function40$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>%
+  filter(`fung_function40$vectors$pvals` <= .1 )
+
+scores_fungal_40 = as.data.frame(scores(NMDS_fungal_40)) %>% 
+  rownames_to_column() %>% 
+  left_join(change40_complete %>% rownames_to_column(), by = "rowname") 
+
+
+```
+
+### no outlier
+
+```{r}
+asv_40_no = asv_40 %>% 
+  filter(rownames(.) %in% rownames(ff40))
+
+NMDS_fungal_40_no = metaMDS(asv_40_no, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+NMDS_fungal_40
+```
+
+```{r}
+scores_fungal_40_no = as.data.frame(scores(NMDS_fungal_40_no))
+
+depth_scores_fungal40_complete_no = envfit(scores_fungal_40_no, ff40, nperm = 999, na.rm = T)
+
+depth_scores_fungal_plot40_complete_no = as.data.frame(scores(depth_scores_fungal40_complete_no, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
+                              rowname == "2018" ~ "% Organic C (2018)"))
+
+
+fungal_func40_no = fungal_func_sum %>% 
+  filter(rownames(.) %in% rownames(scores_fungal_40_no))
+
+fung_function40_no = envfit(scores_fungal_40_no, fungal_func40_no, nperm = 999, na.rm = TRUE)
+
+fung_function_scores40_no = as.data.frame(scores(fung_function40_no, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  left_join(as.data.frame(fung_function40_no$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>%
+  filter(`fung_function40_no$vectors$pvals` <= .1 )
+
+scores_fungal_40_no = as.data.frame(scores(NMDS_fungal_40_no)) %>% 
+  rownames_to_column() %>% 
+  left_join(ff40 %>% rownames_to_column(), by = "rowname") 
+
+
+```
+
+
+### plots
+```{r}
+(fung_plot40 = ggplot(scores_fungal_40, aes(NMDS1, NMDS2, color = `2018`)) +
+  geom_point(size = 3) +
+  geom_segment(data = depth_scores_fungal_plot40_complete, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "blue", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text(data = depth_scores_fungal_plot40_complete, aes(label = variable),
+            size = 4, color = "black") +
+  # geom_text(data = fung_function_scores40, mapping = aes(x = NMDS1, y = NMDS2, label = rowname), color = "blue") +
+  scale_color_viridis_b(name = "% Organic C") +
+  geom_text(aes(label = paste("stress = ", round(NMDS_fungal_40$stress, 3)), x = -0.4, y = -.6), size = 4, color = "black") +
+  theme_bw())
+
+```
+
+```{r}
+(fung_plot40_no = ggplot(scores_fungal_40_no, aes(NMDS1, NMDS2, color = `2018`)) +
+  geom_point(size = 3) +
+  geom_segment(data = depth_scores_fungal_plot40_complete_no, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "blue", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text(data = depth_scores_fungal_plot40_complete_no, aes(label = variable),
+            size = 4, color = "black") +
+  # geom_text(data = fung_function_scores40, mapping = aes(x = NMDS1, y = NMDS2, label = rowname), color = "blue") +
+  scale_color_viridis_b(name = "% Organic C") +
+  geom_text(aes(label = paste("stress = ", round(NMDS_fungal_40_no$stress, 3)), x = -0.4, y = -.6), size = 4, color = "black") +
+  theme_bw())
+```
+
+
+### statisic report
+
+```{r}
+depth_scores_fungal40_complete
+depth_scores_fungal40_complete_no
+
+```
+
+
+## final NMDS figures
+
+```{r}
+(fung_NMDS_all = ggarrange(fung_plot10, fung_plot40, common.legend = F, legend = "right", ncol = 1, labels = "AUTO")  +
+  theme(axis.title = element_text(size = 12)))
+
+(fung_NMDS_all_no_outlier = ggarrange(fung_plot10_no, fung_plot40_no, common.legend =F, legend = "right", ncol = 1, labels = "AUTO")  +
+  theme(axis.title = element_text(size = 12)))
+
+
+ggsave(here::here("documents/figures/fung_NMDS_all.png"), dpi = 300, plot = fung_NMDS_all, device = "png", width = 8, height = 12)
+
+ggsave(here::here("documents/figures/fung_NMDS_all_no_outlier.png"), dpi = 300, plot = fung_NMDS_all_no_outlier, device = "png", width = 8, height = 12)
+
+```
