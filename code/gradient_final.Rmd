@@ -789,7 +789,14 @@ scores_16s_10_no = as.data.frame(scores(NMDS_16S_10_no)) %>%
   geom_text(data = fam_16_scores10, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "blue") +
   scale_color_viridis_b(name = "% Organic C") +
   geom_text(aes(label = paste("stress = ", round(NMDS_16S_10$stress, 3)), x = -0.8, y = -.6), size = 4, color = "black") + 
-  theme_bw()) 
+  theme_bw()+
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white"))) 
 
 ```
 
@@ -804,7 +811,14 @@ scores_16s_10_no = as.data.frame(scores(NMDS_16S_10_no)) %>%
   geom_text(data = fam_16_scores10_no, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "blue") +
   scale_color_viridis_b(name = "% Organic C") +
   geom_text(aes(label = paste("stress = ", round(NMDS_16S_10_no$stress, 3)), x = -0.8, y = -.6), size = 4, color = "black") + 
-  theme_bw())
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white")))
 ```
 ### statisic report
 ```{r}
@@ -914,7 +928,14 @@ scores_16s_40_no = as.data.frame(scores(NMDS_16S_40_no)) %>%
   geom_text(data = fam_16_scores40, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "blue") +
   scale_color_viridis_c(name = "% Organic C") +
   geom_text(aes(label = paste("stress = ", round(NMDS_16S_40$stress, 3)), x = 0.8, y = -.7), size = 4, color = "black") + 
-  theme_bw()) 
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white")) ) 
 
 
 ```
@@ -930,7 +951,14 @@ scores_16s_40_no = as.data.frame(scores(NMDS_16S_40_no)) %>%
   geom_text(data = fam_16_scores40_no, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "blue") +
   scale_color_viridis_b(name = "% Organic C")  +
   geom_text(aes(label = paste("stress = ", round(NMDS_16S_40_no$stress, 3)), x = -0.6, y = -.6), size = 4, color = "black") + 
-  theme_bw()) 
+  theme_bw()+
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white"))) 
 ```
 
 ### statisic report
@@ -1686,7 +1714,7 @@ scores_fungal_40_no = as.data.frame(scores(NMDS_fungal_40_no)) %>%
             size = 4, color = "black") +
   # geom_text(data = fung_function_scores40, mapping = aes(x = NMDS1, y = NMDS2, label = rowname), color = "blue") +
   scale_color_viridis_b(name = "% Organic C") +
-  geom_text(aes(label = paste("stress = ", round(NMDS_fungal_40$stress, 3)), x = -0.4, y = -.6), size = 4, color = "black") +
+  geom_text(aes(label = paste("stress = ", round(NMDS_fungal_40$stress, 3)), x = -0.2, y = -.3), size = 4, color = "black") +
   theme_bw())
 
 ```
@@ -1706,7 +1734,7 @@ scores_fungal_40_no = as.data.frame(scores(NMDS_fungal_40_no)) %>%
 ```
 
 
-### statisic report
+ ### statisic report
 
 ```{r}
 depth_scores_fungal40_complete
@@ -1730,3 +1758,132 @@ ggsave(here::here("documents/figures/fung_NMDS_all.png"), dpi = 300, plot = fung
 ggsave(here::here("documents/figures/fung_NMDS_all_no_outlier.png"), dpi = 300, plot = fung_NMDS_all_no_outlier, device = "png", width = 8, height = 12)
 
 ```
+
+
+##NMDS Future
+
+### Surface
+
+```{r}
+asv_future10 = asv_10 %>% 
+  filter(rownames(.) %in% rownames(change10_future))
+
+change10_future_fung = change10_future %>% 
+  filter(rownames(.) %in% rownames(asv_future10)) %>% 
+  select(change21)
+
+```
+
+
+```{r}
+
+NMDS_fungus_future10 = metaMDS(asv_future10, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+
+NMDS_fungus_future10
+
+```
+
+```{r}
+
+
+scores_fungus_future10 = as.data.frame(scores(NMDS_fungus_future10))
+
+
+depth_scores_fungus_future10 = envfit(scores_fungus_future10, change10_future_16, nperm = 999, na.rm = T)
+
+depth_scores_plot_fungus_future10 = as.data.frame(scores(depth_scores_fungus_future10, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change21" ~ "Future % Change"))
+
+
+scores_fungus_future10 = as.data.frame(scores(NMDS_fungus_future10)) %>% 
+  rownames_to_column() %>% 
+  left_join(change10_future_16 %>% rownames_to_column(), by = "rowname")
+
+```
+
+#### plot
+
+```{r}
+ggplot(scores_fungus_future10, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = change21), size = 4) +
+  geom_segment(data = depth_scores_plot_fungus_future10, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "blue", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text(data = depth_scores_plot_fungus_future10, aes(x = NMDS1, y = NMDS2, label = variable),
+            size = 6) +
+  theme_bw()
+
+```
+
+####stats
+
+```{r}
+depth_scores_fungus_future10
+
+```
+
+### Depth
+
+
+```{r}
+asv_future40 = asv_40 %>% 
+  filter(rownames(.) %in% rownames(change40_future))
+
+change40_future_fung = change40_future %>% 
+  filter(rownames(.) %in% rownames(asv_future40)) %>% 
+  select(change21)
+
+```
+
+
+```{r}
+
+NMDS_fungus_future40 = metaMDS(asv_future40, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE)
+
+NMDS_fungus_future40
+
+```
+
+```{r}
+
+
+scores_fungus_future40 = as.data.frame(scores(NMDS_fungus_future40))
+
+
+depth_scores_fungus_future40 = envfit(scores_fungus_future40, change40_future_16, nperm = 999, na.rm = T)
+
+depth_scores_plot_fungus_future40 = as.data.frame(scores(depth_scores_fungus_future40, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change21" ~ "Future % Change"))
+
+
+scores_fungus_future40 = as.data.frame(scores(NMDS_fungus_future40)) %>% 
+  rownames_to_column() %>% 
+  left_join(change40_future_16 %>% rownames_to_column(), by = "rowname")
+
+```
+
+#### plot
+
+```{r}
+ggplot(scores_fungus_future40, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = change21), size = 4) +
+  geom_segment(data = depth_scores_plot_fungus_future40, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "blue", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text(data = depth_scores_plot_fungus_future40, aes(x = NMDS1, y = NMDS2, label = variable),
+            size = 6) +
+  theme_bw()
+
+```
+
+#### stats
+
+```{r}
+depth_scores_fungus_future40
+
+```
+
+
+
