@@ -210,6 +210,24 @@ fungal_func_sum = asv_table_guilds %>%
   summarize(value = sum(value)) %>% 
   pivot_wider(names_from = trophic_mode, values_from = value) %>% 
   column_to_rownames("name")
+
+
+
+fungal_guild_sum = asv_table_guilds %>% 
+  select(-trait, -sequence, -taxonomy, -taxon, - taxon_level, -notes, -citation_source, - rowname, -trophic_mode, -growth_morphology) %>% 
+  filter(confidence_ranking %in% c("Probable", "Highly Probable")) %>% 
+  select(-confidence_ranking) %>% 
+  pivot_longer(-guild) %>% 
+  group_by(name, guild) %>% 
+  summarize(value = sum(value)) %>% 
+  pivot_wider(names_from = guild, values_from = value) %>% 
+  column_to_rownames("name")
+
+guild_sum = colMeans(fungal_guild_sum) %>% 
+  as.data.frame() %>% 
+  clean_names() %>% 
+  arrange(desc(x))
+
 ```
 
 ## Divide ASV table into depths
@@ -1885,5 +1903,206 @@ depth_scores_fungus_future40
 
 ```
 
+## Functional Groups
 
+```{r}
+
+## connect functional group composition to carbon data for analysis
+
+
+fung_carbon = fungal_func_sum %>% 
+  rownames_to_column() %>% 
+  clean_names() %>% 
+  left_join(toka_c_points %>% select(`2018`, change18, change21, depth, depth_text) %>% rownames_to_column(), by = "rowname") %>% 
+  column_to_rownames("rowname") %>% 
+  mutate(negative = pathotroph + saprotroph + pathotroph_saprotroph)
+
+
+fung_carbon_10 = fungal_func10 %>% 
+  rownames_to_column() %>% 
+  clean_names() %>% 
+  left_join(toka_c_points %>% select(`2018`, change18, change21) %>% rownames_to_column(), by = "rowname") %>% 
+  column_to_rownames("rowname") %>% 
+  mutate(negative = pathotroph + saprotroph + pathotroph_saprotroph)
+
+
+fung_carbon_40 = fungal_func40 %>% 
+  rownames_to_column() %>% 
+  clean_names() %>% 
+  left_join(toka_c_points %>% select(`2018`, change18, change21) %>% rownames_to_column(), by = "rowname") %>% 
+  column_to_rownames("rowname") %>% 
+  mutate(negative = pathotroph + saprotroph + pathotroph_saprotroph)
+
+functional_totals = rowSums(fungal_func_sum) %>% 
+  as.data.frame() %>% 
+  clean_names() %>% 
+  summarise(mean = mean(x), min = min(x), max = max(x))
+
+trophic_averages = colMeans(fungal_func_sum) %>% 
+  as.data.frame()
+
+```
+
+
+
+
+### models surface
+
+
+#### symbiotroph
+```{r}
+surface_symbiotroph_current = lm(`2018` ~ symbiotroph, data = fung_carbon_10)
+summary(surface_symbiotroph_current)
+
+surface_symbiotroph_recent = lm(change18 ~ symbiotroph, data = fung_carbon_10)
+summary(surface_symbiotroph_recent)
+
+surface_symbiotroph_future = lm(change21 ~ symbiotroph, data = fung_carbon_10)
+summary(surface_symbiotroph_future)
+
+```
+
+
+#### s-s
+```{r}
+surface_saprotroph_symbiotroph_current = lm(`2018` ~ saprotroph_symbiotroph, data = fung_carbon_10)
+summary(surface_saprotroph_symbiotroph_current)
+
+surface_saprotroph_symbiotroph_recent = lm(change18 ~ saprotroph_symbiotroph, data = fung_carbon_10)
+summary(surface_saprotroph_symbiotroph_recent)
+
+surface_saprotroph_symbiotroph_future = lm(change21 ~ saprotroph_symbiotroph, data = fung_carbon_10)
+summary(surface_saprotroph_symbiotroph_future)
+
+```
+#### pathotroph
+
+```{r}
+surface_pathotroph_current = lm(`2018` ~ pathotroph, data = fung_carbon_10)
+summary(surface_pathotroph_current)
+
+surface_pathotroph_recent = lm(change18 ~ pathotroph, data = fung_carbon_10)
+summary(surface_pathotroph_recent)
+
+surface_pathotroph_future = lm(change21 ~ pathotroph, data = fung_carbon_10)
+summary(surface_pathotroph_future)
+
+```
+#### saprotroph
+
+```{r}
+surface_saprotroph_current = lm(`2018` ~ saprotroph, data = fung_carbon_10)
+summary(surface_saprotroph_current)
+
+surface_saprotroph_recent = lm(change18 ~ saprotroph, data = fung_carbon_10)
+summary(surface_saprotroph_recent)
+
+surface_saprotroph_future = lm(change21 ~ saprotroph, data = fung_carbon_10)
+summary(surface_saprotroph_future)
+
+plot(surface_saprotroph_future)
+
+```
+
+```{r}
+surface_negative_current = lm(`2018` ~ negative, data = fung_carbon_10)
+summary(surface_negative_current)
+
+surface_negative_recent = lm(change18 ~ negative, data = fung_carbon_10)
+summary(surface_negative_recent)
+
+surface_negative_future = lm(change21 ~ negative, data = fung_carbon_10)
+summary(surface_negative_future)
+
+```
+
+### models Depth
+
+#### symbiotroph
+```{r}
+depth_symbiotroph_current = lm(`2018` ~ symbiotroph, data = fung_carbon_40)
+summary(depth_symbiotroph_current)
+
+depth_symbiotroph_recent = lm(change18 ~ symbiotroph, data = fung_carbon_40)
+summary(depth_symbiotroph_recent)
+
+depth_symbiotroph_future = lm(change21 ~ symbiotroph, data = fung_carbon_40)
+summary(depth_symbiotroph_future)
+
+```
+#### pathotroph
+
+```{r}
+depth_pathotroph_current = lm(`2018` ~ pathotroph, data = fung_carbon_40)
+summary(depth_pathotroph_current)
+
+depth_pathotroph_recent = lm(change18 ~ pathotroph, data = fung_carbon_40)
+summary(depth_pathotroph_recent)
+
+depth_pathotroph_future = lm(change21 ~ pathotroph, data = fung_carbon_40)
+summary(depth_pathotroph_future)
+
+```
+
+#### s-s
+```{r}
+depth_saprotroph_symbiotroph_current = lm(`2018` ~ saprotroph_symbiotroph, data = fung_carbon_40)
+summary(depth_saprotroph_symbiotroph_current)
+
+depth_saprotroph_symbiotroph_recent = lm(change18 ~ saprotroph_symbiotroph, data = fung_carbon_40)
+summary(depth_saprotroph_symbiotroph_recent)
+
+depth_saprotroph_symbiotroph_future = lm(change21 ~ saprotroph_symbiotroph, data = fung_carbon_40)
+summary(depth_saprotroph_symbiotroph_future)
+
+```
+#### saprotroph
+
+```{r}
+depth_saprotroph_current = lm(`2018` ~ saprotroph, data = fung_carbon_40)
+summary(depth_saprotroph_current)
+
+depth_saprotroph_recent = lm(change18 ~ saprotroph, data = fung_carbon_40)
+summary(depth_saprotroph_recent)
+
+depth_saprotroph_future = lm(change21 ~ saprotroph, data = fung_carbon_40)
+summary(depth_saprotroph_future)
+
+```
+
+#### Aggregate groups
+
+```{r}
+surface_negative_current = lm(`2018` ~ negative, data = fung_carbon_40)
+summary(surface_negative_current)
+
+surface_negative_recent = lm(change18 ~ negative, data = fung_carbon_40)
+summary(surface_negative_recent)
+
+surface_negative_future = lm(change21 ~ negative, data = fung_carbon_40)
+summary(surface_negative_future)
+
+```
+
+### Plots
+
+```{r}
+(saprotroph_plot = ggplot(fung_carbon, aes(x = saprotroph, y = change21)) +
+  geom_point() +
+  facet_wrap(. ~ depth_text) +
+  theme_bw() +
+  facet_grid(. ~ depth_text) +
+  theme(axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white")) +
+  geom_smooth(method = "lm", color = "black", linetype = "dashed") +
+  ylab("% Organic Carbon") +
+  xlab("Saprotroph Relative Abundance"))
+
+
+ggsave(here::here("documents/figures/saprotroph_plot.png"), dpi = 300, plot = saprotroph_plot, device = "png", width = 8, height = 6)
+
+```
 
