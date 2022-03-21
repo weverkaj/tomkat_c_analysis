@@ -38,8 +38,6 @@ shannon = read_tsv(here("data/16S/shannon.tsv"))
 
 
 
-
-
 ```r
 otu_straight = otu_table %>% 
   column_to_rownames("#OTU_ID") %>% 

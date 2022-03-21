@@ -1445,6 +1445,13 @@ com_table_fun_all = com_table_fun_standard10 %>%
   select(-rowname) %>% 
   column_to_rownames("point_id")
 
+com_table_10_future = com_table10 %>% 
+  filter(rownames(.) %in% rownames(soil_veg_match10_future))
+
+com_table_40_future = com_table40 %>% 
+  filter(rownames(.) %in% rownames(soil_veg_match40_future))
+
+
 com_table_future = com_table_10_future %>% 
   rownames_to_column() %>% 
   mutate(point_id = str_sub(rowname, 1, 8)) %>% 

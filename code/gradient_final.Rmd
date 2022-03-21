@@ -14,6 +14,7 @@ library(janitor)
 library(ggpubr)
 library(calecopal)
 library(lubridate)
+library(ggrepel)
 
 ```
 
@@ -221,12 +222,21 @@ fungal_guild_sum = asv_table_guilds %>%
   group_by(name, guild) %>% 
   summarize(value = sum(value)) %>% 
   pivot_wider(names_from = guild, values_from = value) %>% 
-  column_to_rownames("name")
+  column_to_rownames("name") %>% 
+  mutate(all_saprotroph = select(., contains("Saprotroph")) %>% rowSums(),
+         all_mycorrhizae = select(., contains("Mycorrhizal")) %>% rowSums(),
+         all_ecto = select(., contains("Ectomycorrhizal")) %>% rowSums(),
+         mycorrhizal_only = select(., contains("mycorrhizal" , ignore.case = TRUE), -contains("-")) %>% rowSums(),
+         plant_pathogens = select(., contains("Plant Pathogen" , ignore.case = TRUE)) %>% rowSums(),
+         saprotroph_only = select(., contains("Saprotroph"), -contains("mycorrhizal", ignore.case = TRUE), -contains("Parasite"), -contains("Pathogen"), -contains("Endophyte"), - contains("Epiphyte")) %>% rowSums()) %>% 
+  select(-contains("-"))
 
 guild_sum = colMeans(fungal_guild_sum) %>% 
   as.data.frame() %>% 
   clean_names() %>% 
-  arrange(desc(x))
+  arrange(desc(x)) 
+
+
 
 ```
 
@@ -1548,6 +1558,9 @@ depth_scores_fungal_plot10_complete = as.data.frame(scores(depth_scores_fungal10
   mutate(variable = case_when(rowname == "change18" ~ "% Carbon Change",
                               rowname == "2018" ~ "% Organic C (2018)"))
 
+fung_sp_scores = scores(NMDS_fungal_10, display = "species") %>% 
+  as.data.frame()
+
 
 fungal_func10 = fungal_func_sum %>% 
   filter(rownames(.) %in% rownames(scores_fungal_10))
@@ -1905,6 +1918,8 @@ depth_scores_fungus_future40
 
 ## Functional Groups
 
+###trophic mode
+
 ```{r}
 
 ## connect functional group composition to carbon data for analysis
@@ -1943,151 +1958,253 @@ trophic_averages = colMeans(fungal_func_sum) %>%
 
 ```
 
+### Guild
 
-
-
-### models surface
-
-
-#### symbiotroph
 ```{r}
-surface_symbiotroph_current = lm(`2018` ~ symbiotroph, data = fung_carbon_10)
-summary(surface_symbiotroph_current)
 
-surface_symbiotroph_recent = lm(change18 ~ symbiotroph, data = fung_carbon_10)
-summary(surface_symbiotroph_recent)
+guild_carbon = fungal_guild_sum %>% 
+  rownames_to_column() %>% 
+  clean_names() %>% 
+  left_join(toka_c_points %>% select(`2018`, change18, change21, depth, depth_text) %>% rownames_to_column(), by = "rowname") %>% 
+  column_to_rownames("rowname")
 
-surface_symbiotroph_future = lm(change21 ~ symbiotroph, data = fung_carbon_10)
-summary(surface_symbiotroph_future)
+guild_carbon10 = guild_carbon %>% 
+  filter(rownames(.) %in% rownames(fung_carbon_10))
+
+guild_carbon40 = guild_carbon %>% 
+  filter(rownames(.) %in% rownames(fung_carbon_40))
+
+guild_sum = guild_carbon %>% 
+  mutate(guild_total = mycorrhizal_only + saprotroph_only) %>% 
+  group_by(depth) %>% 
+  summarise(guild_mean = mean(guild_total), guild_sd = sd(guild_total), myc_mean = mean(mycorrhizal_only), myc_sd = sd(mycorrhizal_only), sap_sum = mean(saprotroph_only), sap_sd = sd(saprotroph_only))
+
+
+guild_sum
+  
+  
+```
+
+
+
+### models Surface
+
+
+#### saptrotroph_only
+```{r}
+surface_saprotroph_only_current = lm(`2018` ~ saprotroph_only, data = guild_carbon10)
+summary(surface_saprotroph_only_current)
+
+surface_saprotroph_only_recent = lm(change18 ~ saprotroph_only, data = guild_carbon10)
+summary(surface_saprotroph_only_recent)
+
+surface_saprotroph_only_future = lm(change21 ~ saprotroph_only, data = guild_carbon10)
+summary(surface_saprotroph_only_future) ###
+
+plot(surface_saprotroph_only_future)
+```
+
+#### all_saprotroph
+
+```{r}
+surface_all_saprotroph_current = lm(`2018` ~ all_saprotroph, data = guild_carbon10)
+summary(surface_all_saprotroph_current)
+
+surface_all_saprotroph_recent = lm(change18 ~ all_saprotroph, data = guild_carbon10)
+summary(surface_all_saprotroph_recent)
+
+surface_all_saprotroph_future = lm(change21 ~ all_saprotroph, data = guild_carbon10)
+summary(surface_all_saprotroph_future) ###
+```
+
+#### all_mycorrhizae
+```{r}
+surface_all_mycorrhizae_current = lm(`2018` ~ all_mycorrhizae, data = guild_carbon10)
+summary(surface_all_mycorrhizae_current)
+
+surface_all_mycorrhizae_recent = lm(change18 ~ all_mycorrhizae, data = guild_carbon10)
+summary(surface_all_mycorrhizae_recent)
+
+surface_all_mycorrhizae_future = lm(change21 ~ all_mycorrhizae, data = guild_carbon10)
+summary(surface_all_mycorrhizae_future)
+```
+
+
+#### mycorrhizae_only
+```{r}
+surface_mycorrhizal_only_current = lm(`2018` ~ mycorrhizal_only, data = guild_carbon10)
+summary(surface_mycorrhizal_only_current)
+
+surface_mycorrhizal_only_recent = lm(change18 ~ mycorrhizal_only, data = guild_carbon10)
+summary(surface_mycorrhizal_only_recent)
+
+surface_mycorrhizal_only_future = lm(change21 ~ mycorrhizal_only, data = guild_carbon10)
+summary(surface_mycorrhizal_only_future) ###
+
 
 ```
 
 
-#### s-s
+#### plant_pathogens
 ```{r}
-surface_saprotroph_symbiotroph_current = lm(`2018` ~ saprotroph_symbiotroph, data = fung_carbon_10)
-summary(surface_saprotroph_symbiotroph_current)
+surface_plant_pathogen_current = lm(`2018` ~ plant_pathogen, data = guild_carbon10)
+summary(surface_plant_pathogen_current)
 
-surface_saprotroph_symbiotroph_recent = lm(change18 ~ saprotroph_symbiotroph, data = fung_carbon_10)
-summary(surface_saprotroph_symbiotroph_recent)
+surface_plant_pathogen_recent = lm(change18 ~ plant_pathogen, data = guild_carbon10)
+summary(surface_plant_pathogen_recent)
 
-surface_saprotroph_symbiotroph_future = lm(change21 ~ saprotroph_symbiotroph, data = fung_carbon_10)
-summary(surface_saprotroph_symbiotroph_future)
-
-```
-#### pathotroph
-
-```{r}
-surface_pathotroph_current = lm(`2018` ~ pathotroph, data = fung_carbon_10)
-summary(surface_pathotroph_current)
-
-surface_pathotroph_recent = lm(change18 ~ pathotroph, data = fung_carbon_10)
-summary(surface_pathotroph_recent)
-
-surface_pathotroph_future = lm(change21 ~ pathotroph, data = fung_carbon_10)
-summary(surface_pathotroph_future)
-
-```
-#### saprotroph
-
-```{r}
-surface_saprotroph_current = lm(`2018` ~ saprotroph, data = fung_carbon_10)
-summary(surface_saprotroph_current)
-
-surface_saprotroph_recent = lm(change18 ~ saprotroph, data = fung_carbon_10)
-summary(surface_saprotroph_recent)
-
-surface_saprotroph_future = lm(change21 ~ saprotroph, data = fung_carbon_10)
-summary(surface_saprotroph_future)
-
-plot(surface_saprotroph_future)
-
+surface_plant_pathogen_future = lm(change21 ~ plant_pathogen, data = guild_carbon10)
+summary(surface_plant_pathogen_future)
 ```
 
+#### all_ecto
 ```{r}
-surface_negative_current = lm(`2018` ~ negative, data = fung_carbon_10)
-summary(surface_negative_current)
+surface_all_ecto_current = lm(`2018` ~ all_ecto, data = guild_carbon10)
+summary(surface_all_ecto_current)
 
-surface_negative_recent = lm(change18 ~ negative, data = fung_carbon_10)
-summary(surface_negative_recent)
+surface_all_ecto_recent = lm(change18 ~ all_ecto, data = guild_carbon10)
+summary(surface_all_ecto_recent)
 
-surface_negative_future = lm(change21 ~ negative, data = fung_carbon_10)
-summary(surface_negative_future)
-
+surface_all_ecto_future = lm(change21 ~ all_ecto, data = guild_carbon10)
+summary(surface_all_ecto_future)
 ```
+
+#### only_ecto
+```{r}
+surface_ectomycorrhizal_current = lm(`2018` ~ ectomycorrhizal, data = guild_carbon10)
+summary(surface_ectomycorrhizal_current)
+
+surface_ectomycorrhizal_recent = lm(change18 ~ ectomycorrhizal, data = guild_carbon10)
+summary(surface_ectomycorrhizal_recent)
+
+surface_ectomycorrhizal_future = lm(change21 ~ ectomycorrhizal, data = guild_carbon10)
+summary(surface_ectomycorrhizal_future)
+```
+
+#### only_arbuscular
+```{r}
+surface_arbuscular_mycorrhizal_current = lm(`2018` ~ arbuscular_mycorrhizal, data = guild_carbon10)
+summary(surface_arbuscular_mycorrhizal_current)
+
+surface_arbuscular_mycorrhizal_recent = lm(change18 ~ arbuscular_mycorrhizal, data = guild_carbon10)
+summary(surface_arbuscular_mycorrhizal_recent)
+
+surface_arbuscular_mycorrhizal_future = lm(change21 ~ arbuscular_mycorrhizal, data = guild_carbon10)
+summary(surface_arbuscular_mycorrhizal_future)
+```
+
 
 ### models Depth
 
-#### symbiotroph
+
+#### saptrotroph_only
 ```{r}
-depth_symbiotroph_current = lm(`2018` ~ symbiotroph, data = fung_carbon_40)
-summary(depth_symbiotroph_current)
+depth_saprotroph_only_current = lm(`2018` ~ saprotroph_only, data = guild_carbon40)
+summary(depth_saprotroph_only_current)
 
-depth_symbiotroph_recent = lm(change18 ~ symbiotroph, data = fung_carbon_40)
-summary(depth_symbiotroph_recent)
+depth_saprotroph_only_recent = lm(change18 ~ saprotroph_only, data = guild_carbon40)
+summary(depth_saprotroph_only_recent)
 
-depth_symbiotroph_future = lm(change21 ~ symbiotroph, data = fung_carbon_40)
-summary(depth_symbiotroph_future)
-
-```
-#### pathotroph
-
-```{r}
-depth_pathotroph_current = lm(`2018` ~ pathotroph, data = fung_carbon_40)
-summary(depth_pathotroph_current)
-
-depth_pathotroph_recent = lm(change18 ~ pathotroph, data = fung_carbon_40)
-summary(depth_pathotroph_recent)
-
-depth_pathotroph_future = lm(change21 ~ pathotroph, data = fung_carbon_40)
-summary(depth_pathotroph_future)
-
+depth_saprotroph_only_future = lm(change21 ~ saprotroph_only, data = guild_carbon40)
+summary(depth_saprotroph_only_future)
 ```
 
-#### s-s
-```{r}
-depth_saprotroph_symbiotroph_current = lm(`2018` ~ saprotroph_symbiotroph, data = fung_carbon_40)
-summary(depth_saprotroph_symbiotroph_current)
-
-depth_saprotroph_symbiotroph_recent = lm(change18 ~ saprotroph_symbiotroph, data = fung_carbon_40)
-summary(depth_saprotroph_symbiotroph_recent)
-
-depth_saprotroph_symbiotroph_future = lm(change21 ~ saprotroph_symbiotroph, data = fung_carbon_40)
-summary(depth_saprotroph_symbiotroph_future)
-
-```
-#### saprotroph
+#### all_saprotroph
 
 ```{r}
-depth_saprotroph_current = lm(`2018` ~ saprotroph, data = fung_carbon_40)
-summary(depth_saprotroph_current)
+depth_all_saprotroph_current = lm(`2018` ~ all_saprotroph, data = guild_carbon40)
+summary(depth_all_saprotroph_current)
 
-depth_saprotroph_recent = lm(change18 ~ saprotroph, data = fung_carbon_40)
-summary(depth_saprotroph_recent)
+depth_all_saprotroph_recent = lm(change18 ~ all_saprotroph, data = guild_carbon40)
+summary(depth_all_saprotroph_recent)
 
-depth_saprotroph_future = lm(change21 ~ saprotroph, data = fung_carbon_40)
-summary(depth_saprotroph_future)
-
+depth_all_saprotroph_future = lm(change21 ~ all_saprotroph, data = guild_carbon40)
+summary(depth_all_saprotroph_future)
 ```
 
-#### Aggregate groups
+#### all_mycorrhizae
+```{r}
+depth_all_mycorrhizae_current = lm(`2018` ~ all_mycorrhizae, data = guild_carbon40)
+summary(depth_all_mycorrhizae_current)
+
+depth_all_mycorrhizae_recent = lm(change18 ~ all_mycorrhizae, data = guild_carbon40)
+summary(depth_all_mycorrhizae_recent)
+
+depth_all_mycorrhizae_future = lm(change21 ~ all_mycorrhizae, data = guild_carbon40)
+summary(depth_all_mycorrhizae_future)
+```
+
+
+#### mycorrhizae_only
+```{r}
+depth_mycorrhizal_only_current = lm(`2018` ~ mycorrhizal_only, data = guild_carbon40)
+summary(depth_mycorrhizal_only_current)
+
+depth_mycorrhizal_only_recent = lm(change18 ~ mycorrhizal_only, data = guild_carbon40)
+summary(depth_mycorrhizal_only_recent)
+
+depth_mycorrhizal_only_future = lm(change21 ~ mycorrhizal_only, data = guild_carbon40)
+summary(depth_mycorrhizal_only_future)
+```
+
+
+#### plant_pathogens
+```{r}
+depth_plant_pathogen_current = lm(`2018` ~ plant_pathogen, data = guild_carbon40)
+summary(depth_plant_pathogen_current)
+
+depth_plant_pathogen_recent = lm(change18 ~ plant_pathogen, data = guild_carbon40)
+summary(depth_plant_pathogen_recent)
+
+depth_plant_pathogen_future = lm(change21 ~ plant_pathogen, data = guild_carbon40)
+summary(depth_plant_pathogen_future)
+```
+
+#### all_ecto
+```{r}
+depth_all_ecto_current = lm(`2018` ~ all_ecto, data = guild_carbon40)
+summary(depth_all_ecto_current)
+
+depth_all_ecto_recent = lm(change18 ~ all_ecto, data = guild_carbon40)
+summary(depth_all_ecto_recent)
+
+depth_all_ecto_future = lm(change21 ~ all_ecto, data = guild_carbon40)
+summary(depth_all_ecto_future)
+```
+
+#### only_ecto
+```{r}
+depth_ectomycorrhizal_current = lm(`2018` ~ ectomycorrhizal, data = guild_carbon40)
+summary(depth_ectomycorrhizal_current)
+
+depth_ectomycorrhizal_recent = lm(change18 ~ ectomycorrhizal, data = guild_carbon40)
+summary(depth_ectomycorrhizal_recent)
+
+depth_ectomycorrhizal_future = lm(change21 ~ ectomycorrhizal, data = guild_carbon40)
+summary(depth_ectomycorrhizal_future)
+```
 
 ```{r}
-surface_negative_current = lm(`2018` ~ negative, data = fung_carbon_40)
-summary(surface_negative_current)
+depth_arbuscular_mycorrhizal_current = lm(`2018` ~ arbuscular_mycorrhizal, data = guild_carbon40)
+summary(depth_arbuscular_mycorrhizal_current)
 
-surface_negative_recent = lm(change18 ~ negative, data = fung_carbon_40)
-summary(surface_negative_recent)
+depth_arbuscular_mycorrhizal_recent = lm(change18 ~ arbuscular_mycorrhizal, data = guild_carbon40)
+summary(depth_arbuscular_mycorrhizal_recent)
 
-surface_negative_future = lm(change21 ~ negative, data = fung_carbon_40)
-summary(surface_negative_future)
-
+depth_arbuscular_mycorrhizal_future = lm(change21 ~ arbuscular_mycorrhizal, data = guild_carbon40)
+summary(depth_arbuscular_mycorrhizal_future)
 ```
+
+
+
+
+
+
 
 ### Plots
 
 ```{r}
-(saprotroph_plot = ggplot(fung_carbon, aes(x = saprotroph, y = change21)) +
+(saprotroph_plot = ggplot(guild_carbon, aes(x = saprotroph_only, y = change21)) +
   geom_point() +
   facet_wrap(. ~ depth_text) +
   theme_bw() +
@@ -2106,3 +2223,398 @@ ggsave(here::here("documents/figures/saprotroph_plot.png"), dpi = 300, plot = sa
 
 ```
 
+# Vegetation
+
+## Data Cleanup
+```{r}
+
+# 
+# 
+# com_table10 = com_table %>% 
+#   filter(year == "2018") %>% 
+#   mutate(id = paste(point_id, 10, sep = "-")) %>% 
+#   column_to_rownames("id") %>% 
+#   select(-point_id, -year) %>% 
+#   decostand(method = "total") %>% 
+#   filter(rownames(.) %in% rownames(change10))
+
+
+com_table_18 = com_table %>% 
+  filter(year == "2018") %>% 
+  column_to_rownames("point_id") %>% 
+  select(-year) %>% 
+  decostand(method = "total") %>% 
+  select(where(~ any(. != 0)))
+
+
+com_table_fun_standard18 = com_table_fun %>% 
+  filter(year == "2018") %>% 
+  column_to_rownames("point_id") %>% 
+  select(-year) %>% 
+  decostand(method = "total") %>% 
+  select(where(~ any(. != 0)))
+
+
+soil_veg = change10 %>% 
+  left_join(change40, by = "point_name", suffix = c("_10", "_40")) %>% 
+  column_to_rownames("point_name") %>% 
+  filter(rownames(.) %in% rownames(com_table_18)) %>% 
+  select(-contains("depth"))
+
+soil_veg_complete = soil_veg %>% 
+  select
+
+soil_veg_future = soil_veg %>% 
+  select(contains("change21")) %>% 
+  filter(!is.na(change21_10))
+
+com_table_future = com_table_18 %>% 
+  filter(rownames(.) %in% rownames(soil_veg_future))
+
+com_table_fun_future = com_table_fun_standard18 %>% 
+  filter(rownames(.) %in% rownames(soil_veg_future))
+
+
+
+
+```
+
+
+## Herbaceous NMDS
+
+```{r}
+
+vegNMDS = metaMDS(com_table_18, distance = "bray", k = 3, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
+
+vegNMDS
+
+
+```
+
+
+```{r}
+
+
+veg_scores = as.data.frame(scores(vegNMDS))
+
+soil_veg_scores = envfit(veg_scores, soil_veg_complete, nperm = 999, na.rm = T, choices = c(1:3))
+soil_veg_scores_plot = as.data.frame(scores(soil_veg_scores, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18_10" ~ "0-10cm % Carbon Change",
+                              rowname == "2018_10" ~ "0-10cm % Organic C",
+                              rowname == "change18_40" ~ "10-40cm % Carbon Change",
+                              rowname == "2018_40" ~ "10-40cm % Organic C"
+                              ),
+         label = case_when(rowname == "change18_10" ~ "A",
+                              rowname == "2018_10" ~ "B",
+                              rowname == "change18_40" ~ "C",
+                              rowname == "2018_40" ~ "D"))
+
+
+fun_grp_scores = envfit(veg_scores, com_table_fun_standard18, nperm = 999, choices = c(1:3))
+fun_grp_scores_plot = as.data.frame(scores(fun_grp_scores, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  left_join(as.data.frame(fun_grp_scores$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>% 
+  filter(`fun_grp_scores$vectors$pvals` < 0.05) %>% 
+  mutate(functional_group = case_when(rowname == "SedgesRushes" ~ "Sedges/Rushes",
+                                      rowname != "SedgesRushes" ~ rowname))
+
+  # left_join(as.data.frame(fam_16_env10$vectors$pvals) %>% rownames_to_column(), by = "rowname")
+
+veg_scores = as.data.frame(scores(vegNMDS)) %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg %>% rownames_to_column(), by = "rowname") 
+
+```
+
+### plot
+```{r}
+(veg_1_2 = ggplot(veg_scores, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = `2018_10`), size = 3) +
+  geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "black", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS2, label = label),
+            size = 6, box.padding = 0.25) +
+  geom_text_repel(data = fun_grp_scores_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue", size = 6) +
+  scale_color_viridis_c(name = "% Organic C 0-10 cm") + 
+  theme_bw()) +
+  theme(axis.title = element_text(size = 14))
+
+ggsave(here::here("documents/figures/0_10_veg_NMDS_12.png"), dpi = 300, plot = veg_1_2, device = "png", width = 8, height = 6)
+
+
+```
+
+```{r}
+(veg_1_3 = ggplot(veg_scores, aes(NMDS1, NMDS3)) +
+  geom_point(aes(color = `2018_10`), size = 3)+
+  geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS3), 
+               color = "black", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS3, label = label),
+            size = 6, box.padding = 0.25) +
+  geom_text_repel(data = fun_grp_scores_plot, mapping = aes(x = NMDS1, y = NMDS3, label = functional_group), color = "blue", size = 6) +
+  scale_color_viridis_c(name = "% Organic C") +
+  theme_bw())  +
+  theme(axis.title = element_text(size = 14))
+
+ggsave(here::here("documents/figures/0_10_veg_NMDS_13.png"), dpi = 300, plot = veg_1_3, device = "png", width = 8, height = 6)
+```
+```{r}
+library(ggpubr)
+
+(veg_NMDS_all = ggarrange(veg_1_2, veg_1_3, common.legend = TRUE, legend = "right", ncol = 1)  +
+  theme(axis.title = element_text(size = 12)))
+
+ggsave(here::here("documents/figures/veg_NMDS_all.png"), dpi = 300, plot = veg_NMDS_all, device = "png", width = 8, height = 12)
+
+```
+
+
+### stats
+
+```{r}
+soil_veg_scores
+fun_grp_scores
+```
+
+## NMDS Future
+
+```{r}
+veg_future_NMDS = metaMDS(com_table_future, distance = "bray", k = 2, maxit = 999, trymax = 500, wascores = TRUE, autotransform = FALSE)
+
+veg_future_NMDS
+```
+
+
+```{r}
+veg_scores_future = as.data.frame(scores(veg_future_NMDS))
+
+
+soil_veg_scores_future = envfit(veg_scores_future, soil_veg_future, nperm = 999, na.rm = T, choices = c(1:3))
+soil_veg_scores_future_plot = as.data.frame(scores(soil_veg_scores_future, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  mutate(variable = case_when(rowname == "change18_10" ~ "0-10cm % Carbon Change",
+                              rowname == "2018_10" ~ "0-10cm % Organic C",
+                              rowname == "change18_40" ~ "10-40cm % Carbon Change",
+                              rowname == "2018_40" ~ "10-40cm % Organic C"
+                              ),
+         label = case_when(rowname == "change21_10" ~ "0-10cm",
+                              rowname == "change21_40" ~ "10-40cm"))
+
+
+fun_grp_scores_future = envfit(veg_scores_future, com_table_fun_future, nperm = 999, choices = c(1:3))
+fun_grp_scores_future_plot = as.data.frame(scores(fun_grp_scores_future, display = "vectors")) %>% 
+  rownames_to_column() %>% 
+  left_join(as.data.frame(fun_grp_scores$vectors$pvals) %>% rownames_to_column(), by = "rowname") %>% 
+  filter(`fun_grp_scores$vectors$pvals` < 0.05) %>% 
+  mutate(functional_group = case_when(rowname == "SedgesRushes" ~ "Sedges/Rushes",
+                                      rowname != "SedgesRushes" ~ rowname))
+
+  # left_join(as.data.frame(fam_16_env10$vectors$pvals) %>% rownames_to_column(), by = "rowname")
+
+veg_scores_future = as.data.frame(scores(veg_future_NMDS)) %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg_future %>% rownames_to_column(), by = c("rowname")) 
+
+```
+veg_scores_future = as.data.frame(scores(veg_future_NMDS))
+
+### plot
+
+```{r}
+(veg_future = ggplot(veg_scores_future, aes(NMDS1, NMDS2)) +
+  geom_point(aes(color = change21_10), size = 3) +
+  geom_segment(data = soil_veg_scores_future_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
+               color = "black", 
+               arrow = arrow(length = unit(0.25, "cm"))) +
+  geom_text_repel(data = soil_veg_scores_future_plot, aes(x = NMDS1, y = NMDS2, label = label),
+            size = 6, box.padding = 0.1) +
+  geom_text_repel(data = fun_grp_scores_future_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue", size = 6) +
+  scale_color_viridis_c(name = "Change 2018-21 \n%SOC 0-10 cm ") + 
+  theme_bw()) +
+  theme(axis.title = element_text(size = 14))
+
+ggsave(here::here("documents/figures/veg_future_NMDS.png"), dpi = 300, plot = veg_future, device = "png", width = 8, height = 6)
+
+
+soil_veg_scores_future
+```
+### stats
+
+```{r}
+soil_veg_scores_future
+
+```
+
+
+## Functional Groups
+```{r}
+fun_table_soil = com_table_fun_standard18 %>% 
+  rownames_to_column() %>% 
+  left_join(soil_veg %>% rownames_to_column(), by = "rowname") %>% 
+  clean_names() %>% 
+  mutate(p_a_grass = perennial_grass/annual_grass)
+```
+
+
+
+### Models
+
+#### Perennial Grass
+
+```{r}
+
+# current
+pg_mod_surface = lm(x2018_10 ~ perennial_grass, data = fun_table_soil)
+summary(pg_mod_surface)
+
+pg_mod_depth = lm(x2018_40 ~ perennial_grass, data = fun_table_soil)
+summary(pg_mod_depth)
+
+#past
+pg_mod_surface_past = lm(change18_10 ~ perennial_grass, data = fun_table_soil)
+summary(pg_mod_surface_past)
+
+pg_mod_depth_past = lm(change18_40 ~ perennial_grass, data = fun_table_soil)
+summary(pg_mod_depth_past)
+
+# future
+
+pg_mod_surface_future = lm(change21_10 ~ perennial_grass, data = fun_table_soil) ## significant
+summary(pg_mod_surface_future)
+
+pg_mod_depth_future = lm(change21_40 ~ perennial_grass, data = fun_table_soil) ## significant
+summary(pg_mod_depth_future)
+
+
+```
+#### annual grass
+```{r}
+
+# current
+ag_mod_surface = lm(x2018_10 ~ annual_grass, data = fun_table_soil)
+summary(ag_mod_surface)
+
+ag_mod_depth = lm(x2018_40 ~ annual_grass, data = fun_table_soil)
+summary(ag_mod_depth)
+
+
+
+#past
+ag_mod_surface_past = lm(change18_10 ~ annual_grass, data = fun_table_soil)
+summary(ag_mod_surface_past)
+
+ag_mod_depth_past = lm(change18_40 ~ annual_grass, data = fun_table_soil)
+summary(ag_mod_depth_past)
+
+# future
+
+ag_mod_surface_future = lm(change21_10 ~ annual_grass, data = fun_table_soil) ## significant
+summary(ag_mod_surface_future)
+
+ag_mod_depth_future = lm(change21_40 ~ annual_grass, data = fun_table_soil) ## significant
+summary(ag_mod_depth_future)
+
+
+```
+#### P:a
+
+
+There's and outlier here, makes it kind of hard to use the ratio
+```{r}
+
+# current
+p_a_mod_surface = lm(x2018_10 ~ p_a_grass, data = fun_table_soil)
+summary(p_a_mod_surface)
+
+p_a_mod_depth = lm(x2018_40 ~ p_a_grass, data = fun_table_soil)
+summary(p_a_mod_depth)
+
+
+
+#past
+p_a_mod_surface_past = lm(change18_10 ~ p_a_grass, data = fun_table_soil)
+summary(p_a_mod_surface_past)
+
+p_a_mod_depth_past = lm(change18_40 ~ p_a_grass, data = fun_table_soil)
+summary(p_a_mod_depth_past)
+
+# future
+
+p_a_mod_surface_future = lm(change21_10 ~ p_a_grass, data = fun_table_soil) ## significant
+summary(p_a_mod_surface_future)
+
+p_a_mod_depth_future = lm(change21_40 ~ p_a_grass, data = fun_table_soil) ## significant
+summary(p_a_mod_depth_future)
+
+```
+
+
+## Diversity analyses
+```{r}
+divs = diversity(com_table_18, index= "shannon") %>% 
+  as.data.frame() %>% 
+  clean_names() %>% 
+  rename(diversity18 = x) %>% 
+  rownames_to_column()
+
+divs_21 = diversity(com_table21_change) %>% 
+  as.data.frame() %>% 
+  clean_names() %>% 
+  rename(diversity21 = x) %>% 
+  rownames_to_column()
+
+diversity_soil = divs %>% 
+  left_join(divs_21, by = "rowname") %>% 
+  left_join(soil_veg %>% rownames_to_column(), by = "rowname") %>% 
+  mutate(diversity_change = diversity21 - diversity18)
+
+```
+
+
+### Models
+
+#### current models
+```{r}
+
+
+div_surf_mod = lm(`2018_10` ~ diversity18, data = diversity_soil)
+summary(div_surf_mod)
+
+div_depth_mod = lm(`2018_40` ~ diversity18, data = diversity_soil)
+summary(div_depth_mod)
+
+```
+#### Past Change Models
+```{r}
+
+div_surf_change_mod = lm(change18_10 ~ diversity18, data = diversity_soil) 
+summary(div_surf_change_mod)
+
+div_depth_change_mod = lm(change18_40 ~ diversity18, data = diversity_soil)
+summary(div_depth_change_mod)
+
+```
+
+
+```{r}
+
+div_surf_future_mod = lm(change21_10 ~ diversity18, data = diversity_soil)
+summary(div_surf_future_mod)
+
+div_depth_future_mod = lm(change21_40 ~ diversity18, data = diversity_soil)
+summary(div_depth_future_mod)
+
+```
+
+```{r}
+
+div_change_surf = lm(change21_10 ~ diversity_change, data = diversity_soil)
+summary(div_change_surf)
+
+div_change_surf = lm(change21_40 ~ diversity_change, data = diversity_soil)
+summary(div_change_surf)
+
+```
