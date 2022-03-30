@@ -480,6 +480,10 @@ c_change_40_21 = varpart(c_change_deep$change21, all_veg_scores_change40, otu_sc
 # c_stock_10
 plot(c_change_40_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "16S", "Fungus" ))
 
+c_change_40_21_x = varpart(c_change_deep$change21, otu_scores_change40, fungal40_change)
+plot(c_change_40_21_x)
+
+
 # c_change_40family_21 = varpart(c_change_deep$change21, all_veg_scores_change40, phylum_scores_change40, soil40_change)
 # # c_stock_10
 # plot(c_change_40family_21, bg = c("green", "brown", "purple"), Xnames = c("Veg", "OTU", "soil" ))
@@ -543,21 +547,21 @@ png(here("documents/figures/varpart_all.png"), width = 1200, height = 1600)
 par(mfrow = c(3,2))
 
 #stocks
-plot(c_stock_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus"), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+plot(c_stock_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungi"), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
 title(main = "A. %Organic C, 0-10 cm", cex.main = 2.5)
-plot(c_stock_40,  bg = c("green", "brown", "purple"),  Xnames = c("Plants", "Bacteria", "Fungus"), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+plot(c_stock_40,  bg = c("green", "brown", "purple"),  Xnames = c("Plants", "Bacteria", "Fungi"), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
 title(main = "B. %Organic C, 10-40 cm", cex.main = 2.5)
 
 #change 18
-plot(c_change_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+plot(c_change_10, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungi" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
 title(main = "C. Change 2015-2018 %Organic C, 0-10 cm", cex.main = 2.5)
-plot(c_change_40, bg = c("green",  "purple", "brown"), Xnames = c("Plants", "Bacteria", "Fungus" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+plot(c_change_40, bg = c("green",  "purple", "brown"), Xnames = c("Plants", "Bacteria", "Fungi" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
 title(main = "D. Change 2015-2018 %Organic C, 10-40 cm", cex.main = 2.5)
 
 #change 21
-plot(c_change_10_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+plot(c_change_10_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungi" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
 title(main = "E. Change 2018-2021 %Organic C, 0-10 cm", cex.main = 2.5)
-plot(c_change_40_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungus" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
+plot(c_change_40_21, bg = c("green", "brown", "purple"), Xnames = c("Plants", "Bacteria", "Fungi" ), cex = 2.5, cex.sub = 1.5, cex.lab = 1.5, id.size = 3)
 title(main = "F. Change 2018-2021 %Organic C, 10-40 cm", cex.main = 2.5)
 
 

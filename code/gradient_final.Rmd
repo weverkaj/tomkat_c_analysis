@@ -7,6 +7,7 @@ output: html_document
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
+library(MASS)
 library(tidyverse)
 library(vegan)
 library(here)
@@ -15,6 +16,10 @@ library(ggpubr)
 library(calecopal)
 library(lubridate)
 library(ggrepel)
+
+
+
+set.seed(312)
 
 ```
 
@@ -63,6 +68,9 @@ points_c_surface = visits_c %>%
   group_by(point_name) %>% 
   mutate(year = lubridate::year(date)) %>% 
   pivot_wider(id_cols = point_name, names_from = year, values_from = carbon_0_10) %>% 
+  mutate(`2015` = na_if(`2015`, 0),
+         `2018` = na_if(`2018`, 0),
+         `2021` = na_if(`2021`, 0)) %>% 
   mutate(change18 = case_when(!is.na(`2015`) ~ `2018`- `2015`,
                               is.na(`2015`) ~ `2018`- `2014`),
          change21 = `2021`- `2018`,
@@ -74,6 +82,9 @@ points_c_depth = visits_c %>%
   group_by(point_name) %>% 
   mutate(year = lubridate::year(date)) %>% 
   pivot_wider(id_cols = point_name, names_from = year, values_from = carbon_10_40) %>% 
+  mutate(`2015` = na_if(`2015`, 0),
+         `2018` = na_if(`2018`, 0),
+         `2021` = na_if(`2021`, 0)) %>% 
   mutate(change18 = case_when(!is.na(`2015`) ~ `2018`- `2015`,
                               is.na(`2015`) ~ `2018`- `2014`),
          change21 = `2021`- `2018`,
@@ -85,13 +96,15 @@ toka_c_points = bind_rows(points_c_surface, points_c_depth) %>%
   column_to_rownames("id") %>% 
   mutate(depth = as.factor(depth)) %>% 
   mutate(depth_text = case_when(depth == 10 ~ "0-10 cm",
-                           depth == 40 ~ "10-40 cm"))
+                           depth == 40 ~ "10-40 cm")) 
 
 change_future = toka_c_points %>% 
   select(`2015`, `2018`, change18, change21, depth) %>% 
   rownames_to_column() %>% 
   filter(!is.na(change21)) %>% 
   column_to_rownames("rowname")
+
+GGally::ggpairs(toka_c_points %>% select(-point_name))
 
 ```
 
@@ -171,6 +184,9 @@ family_standard = family_table %>%
 #Fungal Data Prep
 
 ##Read-in
+
+
+If we end up rarefying, we can use rarefy from vegan
 ```{r}
 asv_tab_forward = read_csv(here("data/asv_tab_forward_long.csv")) #asv table
 asv_tab_unite = read_csv(here("data/asv_unite_forward..csv")) #taxon assignments in same order as OTUs
@@ -349,6 +365,21 @@ com_table_fun = lpi_fun_sum %>%
   select(-`NA`) 
 
 
+bare_ground = lpi_raw %>% 
+  janitor::clean_names() %>% 
+  filter(!is.na(soil_surface)) %>% 
+  mutate(date = lubridate::ymd(date),
+         year = lubridate::year(date)) %>% 
+  filter(year != 2016,
+         top_layer == "NOPLANT" & is.na(lower1),
+         is.na(canopy1),
+         nchar(soil_surface) < 4) %>% 
+  group_by(point_id, year) %>% 
+  summarise(bare_ground = n()) %>% 
+  right_join(lpi_count %>% filter(year != 2016), by = c("point_id", "year")) %>% 
+  mutate(bare_ground = replace_na(bare_ground, 0)) %>% 
+  mutate(relative_bareground =  bare_ground/n)
+
 ```
 
 ## Separate by year and prep for depth
@@ -450,7 +481,11 @@ top_species = new_com_table %>%
   rownames_to_column() %>% 
   pivot_longer(-rowname) %>% 
   group_by(name) %>% 
-  summarise(total = sum(value))
+  summarise(total = sum(value),
+            mean = mean(value),
+            sd = sd(value))
+
+write.csv(top_species, file = here("documents/figures/top_plants_table.csv"))
 ```
 
 ```{r}
@@ -546,37 +581,17 @@ summary(divmod_surf_future)
 divmod_depth_future = lm(change21 ~ richness, data = microbe_diversity_soil40) #marginally significant
 summary(divmod_depth_future)
 
-future_depth = lm(change21 ~ depth, data = microbe_diversity_soil)
-summary(future_depth)
-
-divmod_future = lm(change21 ~ richness + depth, data = microbe_diversity_soil) #significant <----
-summary(divmod_future)
-
-divmod_future_int = lm(change21 ~ richness*depth, data = microbe_diversity_soil) #significant but worse
-summary(divmod_future_int)
-
-AIC(future_depth, divmod_future, divmod_future_int)
 
 
-divmod_current = lm(`2018` ~ richness + depth, data = microbe_diversity_soil) #significant
-summary(divmod_current)
+# AIC(divmod_current, divmod_current_depth)
 
-divmod_current_depth = lm(`2018` ~ depth, data = microbe_diversity_soil)
-summary(divmod_current_depth)
 
-AIC(divmod_current, divmod_current_depth)
 
-divmod_current_int = lm(`2018` ~ richness*depth, data = microbe_diversity_soil) #significant but worse
-summary(divmod_current_int)
-
-AIC(divmod_current, divmod_current_int)
+# AIC(divmod_current, divmod_current_int)
 
 ```
 
-```{r}
-plot(divmod_future)
 
-```
 ### Diversity plots
 ```{r}
 
@@ -586,8 +601,15 @@ plot(divmod_future)
   geom_smooth(method = "lm", linetype = "dashed", color = "black") +
   # scale_color_manual(values = c("darkgreen", "purple"),  labels = c("0-10 cm", "10-40 cm"), name = "Depth") +
   theme_bw() +
+  theme(axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white")) +
   ylab("% SOC 2018") +
-  xlab("ASV Richness 2018"))
+  xlab("Bacterial/Archaeal ASV Richness 2018") + 
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.01)))
+
 
 ggsave(here::here("documents/figures/bact_richness_soc.png"), dpi = 300, plot = bact_richness, device = "png", width = 8, height = 6)
 
@@ -598,11 +620,17 @@ ggsave(here::here("documents/figures/bact_richness_soc.png"), dpi = 300, plot = 
 (bact_richness_change = ggplot(microbe_diversity_soil, aes(x = richness, y = change21)) +
   geom_point() +
   facet_wrap(. ~ depth_text) +
-  geom_smooth(method = "lm", linetype = "dashed", color = "black") +
+  geom_smooth(data = microbe_diversity_soil40, method = "lm", linetype = "dashed", color = "black") +
   # scale_color_manual(values = c("darkgreen", "purple"), name = "Depth") +
   theme_bw() +
-  ylab("Change % SOC 2018-2021") +
-  xlab("ASV richness"))
+  theme(axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white")) +
+  ylab("Change % SOC 2018-21") +
+  xlab("Bacterial/Archaeal ASV richness")+ 
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.1)))
 
 ggsave(here::here("documents/figures/bact_richness_future_change.png"), dpi = 300, plot = bact_richness_change, device = "png", width = 8, height = 6)
 
@@ -1236,7 +1264,8 @@ copiotroph = c("Proteobacteria", "Bacteroidetes", "Actinobacteria", "Gemmatimona
 fam_carbon_function = fam_carbon %>% 
   mutate(oligotrophs = p__Verrucomicrobia + p__Acidobacteria,
          copiotrophs = p__Proteobacteria + p__Bacteroidetes + p__Actinobacteria + p__Gemmatimonadetes,
-         c_o_ratio = copiotrophs/oligotrophs)
+         c_o_ratio = copiotrophs/oligotrophs,
+         total_classified = oligotrophs + copiotrophs)
 
 fam_carbon_function10 = fam_carbon_function %>% 
   filter(depth == 10)
@@ -1248,7 +1277,10 @@ trait_sum =  fam_carbon_function %>%
   group_by(depth) %>% 
   summarize(mean_c_o = mean(c_o_ratio),
             sd_c_o = sd(c_o_ratio),
-            mean_C = mean(`2018`))
+            mean_C = mean(`2018`),
+            mean_class = mean(total_classified),
+            max_class = max(total_classified),
+            min_class = min(total_classified))
 
 trait_sum
 
@@ -1279,7 +1311,7 @@ summary(trait_mod40_no)
 # summary(trait_mod)
 
 
-plot(trait_mod10_no)
+# plot(trait_mod10_no)
 
 ```
 
@@ -1323,8 +1355,9 @@ summary(trait_mod40)
         strip.background = element_rect(fill="white")) +
   # geom_smooth(data = fam_carbon_function %>% filter(depth_cm == "0 to 10"), method = "lm", fill = "darkgreen", alpha = 0.1) +
   geom_smooth(method = "lm", color = "black", linetype = "dashed") +
-  ylab("% Organic Carbon") +
-  xlab("Copiotroph:Oligotroph Ratio"))
+  ylab("% Organic Carbon 2018") +
+  xlab("2018 Copiotroph:Oligotroph Ratio")+ 
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.01)))
 
 ggsave(here::here("documents/figures/bact_function_2018.png"), dpi = 300, plot = function_16S_plot, device = "png", width = 8, height = 6)
 
@@ -1346,8 +1379,9 @@ ggsave(here::here("documents/figures/bact_function_2018.png"), dpi = 300, plot =
         strip.background = element_rect(fill="white")) +
   # geom_smooth(data = fam_carbon_function %>% filter(depth_cm == "0 to 10"), method = "lm", fill = "darkgreen", alpha = 0.1) +
   geom_smooth(method = "lm", color = "black", linetype = "dashed") +
-  ylab("Change % Organic Carbon 2018-2021") +
-  xlab("Copiotroph:Oligotroph Ratio"))
+  ylab("Change % Organic Carbon 2018-21") +
+  xlab("2018 Copiotroph:Oligotroph Ratio") + 
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.1)))
 
 
 ggsave(here::here("documents/figures/bact_function_future.png"), dpi = 300, plot = function_16S_plot_future, device = "png", width = 8, height = 6)
@@ -1368,10 +1402,22 @@ ggsave(here::here("documents/figures/bact_function_future.png"), dpi = 300, plot
   # geom_smooth(data = fam_carbon_function %>% filter(depth_cm == "0 to 10"), method = "lm", fill = "darkgreen", alpha = 0.1) +
   geom_smooth(method = "lm", color = "black", linetype = "dashed") +
   ylab("Change % Organic Carbon 2018-2021") +
-  xlab("Copiotroph:Oligotroph Ratio"))
+  xlab("Copiotroph:Oligotroph Ratio") + 
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.01)))
 
 
 ```
+
+
+## Combined plot
+
+```{r}
+(plot_bact_all = ggarrange(function_16S_plot, function_16S_plot_future, bact_richness_change, nrow = 3, labels = "AUTO", label.x = 0.00, label.y = 1)
+)
+ggsave(here::here("documents/figures/16S_metrics_all.png"), dpi = 300, plot = plot_bact_all, device = "png", width = 10, height = 12)
+
+```
+
 
 # Fungal Analyses
 
@@ -1433,6 +1479,10 @@ summary(fung_surf_future)
 fung_depth_future = lm(change21 ~ richness, data = fungal_diversity_soil40)
 summary(fung_depth_future)
 
+ggplot(fungal_diversity_soil40, aes(x = richness, y = change18)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
 ```
 ```{r}
   plot(fung_surf_current_no)
@@ -1442,17 +1492,44 @@ summary(fung_depth_future)
 
 (fung_richness = ggplot(fungal_diversity_soil, aes(x = richness, y = `2018`)) +
   geom_point() +
+    theme_bw() +
   facet_wrap(. ~ depth_text) +
-  geom_smooth(method = "lm", linetype = "dashed", color = "black") +
+  geom_smooth(data = fungal_diversity_soil10, method = "lm", linetype = "dashed", color = "black") +
   # scale_color_manual(values = c("darkgreen", "purple"),  labels = c("0-10 cm", "10-40 cm"), name = "Depth") +
-  theme_bw() +
+  theme(axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white")) +
   ylab("% SOC 2018") +
-  xlab("Fungal ASV Richness 2018"))
+  xlab("Fungal ASV Richness 2018") + 
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.01)))
 
 ggsave(here::here("documents/figures/fungal_diversity_2018.png"), dpi = 300, plot = fung_richness, device = "png", width = 8, height = 6)
 
 
 ```
+
+
+
+
+```{r}
+
+(fung_richness_recent = ggplot(fungal_diversity_soil, aes(x = richness, y = change18)) +
+  geom_point() +
+  theme_bw() +
+  facet_wrap(. ~ depth_text) +
+  geom_smooth(data = fungal_diversity_soil40, method = "lm", linetype = "dashed", color = "black") +
+  # scale_color_manual(values = c("darkgreen", "purple"),  labels = c("0-10 cm", "10-40 cm"), name = "Depth") +
+  theme(axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        strip.background = element_rect(fill="white")) +
+  ylab("Change % SOC 2015-18") +
+  xlab("Fungal ASV Richness 2018"))
+```
+
 
 ## NMDS ALL
 
@@ -1765,7 +1842,7 @@ scores_fungal_40_no = as.data.frame(scores(NMDS_fungal_40_no)) %>%
 ```
 
 
- ### statisic report
+### statisic report
 
 ```{r}
 depth_scores_fungal40_complete
@@ -2214,12 +2291,21 @@ summary(depth_arbuscular_mycorrhizal_future)
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 12),
         strip.background = element_rect(fill="white")) +
-  geom_smooth(method = "lm", color = "black", linetype = "dashed") +
-  ylab("% Organic Carbon") +
-  xlab("Saprotroph Relative Abundance"))
+  geom_smooth(data = guild_carbon10, method = "lm", color = "black", linetype = "dashed") +
+  ylab("% Change SOC 2018-21") +
+  xlab("Saprotroph Relative Abundance 2018"))
 
 
 ggsave(here::here("documents/figures/saprotroph_plot.png"), dpi = 300, plot = saprotroph_plot, device = "png", width = 8, height = 6)
+
+```
+
+## Combined plot
+
+```{r}
+(plot_fungus_all = ggarrange(fung_richness, fung_richness_recent, saprotroph_plot, nrow = 3, labels = "AUTO", label.x = 0.00, label.y = 1)
+)
+ggsave(here::here("documents/figures/plot_fungus_all.png"), dpi = 300, plot = plot_fungus_all, device = "png", width = 10, height = 12)
 
 ```
 
@@ -2228,15 +2314,6 @@ ggsave(here::here("documents/figures/saprotroph_plot.png"), dpi = 300, plot = sa
 ## Data Cleanup
 ```{r}
 
-# 
-# 
-# com_table10 = com_table %>% 
-#   filter(year == "2018") %>% 
-#   mutate(id = paste(point_id, 10, sep = "-")) %>% 
-#   column_to_rownames("id") %>% 
-#   select(-point_id, -year) %>% 
-#   decostand(method = "total") %>% 
-#   filter(rownames(.) %in% rownames(change10))
 
 
 com_table_18 = com_table %>% 
@@ -2246,9 +2323,24 @@ com_table_18 = com_table %>%
   decostand(method = "total") %>% 
   select(where(~ any(. != 0)))
 
+com_table_21 = com_table %>% 
+  filter(year == "2021") %>% 
+  column_to_rownames("point_id") %>% 
+  select(-year)%>% 
+  decostand(method = "total") %>% 
+  select(where(~ any(. != 0)))
+
 
 com_table_fun_standard18 = com_table_fun %>% 
   filter(year == "2018") %>% 
+  column_to_rownames("point_id") %>% 
+  select(-year) %>% 
+  decostand(method = "total") %>% 
+  select(where(~ any(. != 0)))
+
+
+com_table_fun_standard21 = com_table_fun %>% 
+  filter(year == "2021") %>% 
   column_to_rownames("point_id") %>% 
   select(-year) %>% 
   decostand(method = "total") %>% 
@@ -2262,7 +2354,7 @@ soil_veg = change10 %>%
   select(-contains("depth"))
 
 soil_veg_complete = soil_veg %>% 
-  select
+  select(- contains("21"), -contains("15"), -contains("14"))
 
 soil_veg_future = soil_veg %>% 
   select(contains("change21")) %>% 
@@ -2274,10 +2366,41 @@ com_table_future = com_table_18 %>%
 com_table_fun_future = com_table_fun_standard18 %>% 
   filter(rownames(.) %in% rownames(soil_veg_future))
 
+richness_18 = specnumber(com_table_18)
+richness21 = specnumber(com_table_21)
 
 
+mean(richness_18); sd(richness_18)
+mean(richness21); sd(richness21)
+
+max(com_table_18$PHAQ)
+max(com_table_18$DACA3)
+
+hist(com_table_18$PHAQ, breaks = 30)
+hist(com_table_18$DACA3,breaks = 30)
+hist(com_table_18$NAPU4,breaks = 30)
 
 ```
+
+## Soil summaries
+```{r}
+
+soil_sum = soil_veg %>% 
+  mutate(first10 = coalesce(`2015_10`, `2014_10`),
+         first40 = coalesce(`2015_40`, `2014_40`)) %>% 
+  summarise(mean1510 = mean(first10, na.rm = T), sd1510 = sd(first10, na.rm = T),
+            mean1540 = mean(first40, na.rm = T), sd1540 = sd(first40, na.rm = T),
+            mean1810 = mean(`2018_10`, na.rm = T), sd1810 = sd(`2018_10`, na.rm = T),
+            mean1840 = mean(`2018_40`, na.rm = T), sd1840 = sd(`2018_40`, na.rm = T),
+            mean2110 = mean(`2021_10`, na.rm = T), sd210 = sd(`2021_10`, na.rm = T),
+            mean2140 = mean(`2021_40`, na.rm = T), sd2140 = sd(`2021_40`, na.rm = T),
+            meanchange1810 = mean(change18_10, na.rm = T), sdchange1810 = sd(change18_10, na.rm = T),
+            meanchange1840 = mean(change18_40, na.rm = T), sdchange1840 = sd(change18_40, na.rm = T),
+            meanchange2110 = mean(change21_10, na.rm = T), sdchange2110 = sd(change21_10, na.rm = T),
+            meanchange2140 = mean(change21_40, na.rm = T), sdchange2140 = sd(change21_40, na.rm = T))
+
+```
+
 
 
 ## Herbaceous NMDS
@@ -2337,7 +2460,7 @@ veg_scores = as.data.frame(scores(vegNMDS)) %>%
   geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS2, label = label),
             size = 6, box.padding = 0.25) +
   geom_text_repel(data = fun_grp_scores_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue", size = 6) +
-  scale_color_viridis_c(name = "% Organic C 0-10 cm") + 
+  scale_color_viridis_c(name = "% Organic C 0-10 cm")+  
   theme_bw()) +
   theme(axis.title = element_text(size = 14))
 
@@ -2451,16 +2574,64 @@ soil_veg_scores_future
 
 ## Functional Groups
 ```{r}
+
+funchange = com_table_fun_standard18 %>% 
+  rownames_to_column() %>% 
+  left_join(com_table_fun_standard21 %>% rownames_to_column(), by = "rowname") %>% 
+  clean_names() %>% 
+  mutate(pg_change = perennial_grass_y - perennial_grass_x,
+         ag_change = annual_grass_y - annual_grass_x,
+         af_change = annual_forb_y - annual_forb_x,
+         pf_change = perennial_forb_y - perennial_forb_x,
+         pa_change = (perennial_grass_y/annual_grass_y) - (perennial_grass_x/annual_grass_x)) %>% 
+  select(rowname, pg_change, ag_change, af_change, pf_change, pa_change)
+
+
 fun_table_soil = com_table_fun_standard18 %>% 
   rownames_to_column() %>% 
   left_join(soil_veg %>% rownames_to_column(), by = "rowname") %>% 
+  left_join(bare_ground %>% filter(year == 2018), by = c("rowname" = "point_id")) %>% 
   clean_names() %>% 
-  mutate(p_a_grass = perennial_grass/annual_grass)
+  mutate(p_a_grass = perennial_grass/annual_grass) %>% 
+  left_join(funchange, by = "rowname")
 ```
 
 
 
 ### Models
+
+```{r}
+bg_pg = lm(perennial_grass ~ relative_bareground, data = fun_table_soil)
+summary(bg_pg)
+
+ggplot(fun_table_soil, aes(x = relative_bareground, y = perennial_grass, color = x2018_10)) +
+  geom_point()
+```
+
+
+#### bare ground
+
+```{r}
+bg_mod_surface = lm(x2018_10 ~ relative_bareground, data = fun_table_soil)
+summary(bg_mod_surface)
+
+bg_mod_depth = lm(x2018_40 ~ relative_bareground, data = fun_table_soil)
+summary(bg_mod_depth)
+
+bg_mod_surface_past = lm(change18_10 ~ relative_bareground, data = fun_table_soil)
+summary(bg_mod_surface_past)
+
+bg_mod_depth_past = lm(change18_40 ~ relative_bareground, data = fun_table_soil)
+summary(bg_mod_depth_past)
+
+
+bg_mod_surface_future = lm(change21_10 ~ relative_bareground, data = fun_table_soil)
+summary(bg_mod_surface_future)
+
+bg_mod_depth_future = lm(change21_40 ~ relative_bareground, data = fun_table_soil)
+summary(bg_mod_depth_future)
+```
+
 
 #### Perennial Grass
 
@@ -2487,6 +2658,12 @@ summary(pg_mod_surface_future)
 
 pg_mod_depth_future = lm(change21_40 ~ perennial_grass, data = fun_table_soil) ## significant
 summary(pg_mod_depth_future)
+
+pg_mod_surface_change = lm(change21_10 ~ pg_change, data = fun_table_soil)
+summary(pg_mod_surface_change)
+
+pg_mod_depth_change = lm(change21_40 ~ pg_change, data = fun_table_soil)
+summary(pg_mod_depth_change)
 
 
 ```
@@ -2516,6 +2693,12 @@ summary(ag_mod_surface_future)
 
 ag_mod_depth_future = lm(change21_40 ~ annual_grass, data = fun_table_soil) ## significant
 summary(ag_mod_depth_future)
+
+ag_mod_surface_change = lm(change21_10 ~ ag_change, data = fun_table_soil)
+summary(ag_mod_surface_change)
+
+ag_mod_depth_change = lm(change21_40 ~ ag_change, data = fun_table_soil)
+summary(ag_mod_depth_change)
 
 
 ```
@@ -2549,7 +2732,61 @@ summary(p_a_mod_surface_future)
 p_a_mod_depth_future = lm(change21_40 ~ p_a_grass, data = fun_table_soil) ## significant
 summary(p_a_mod_depth_future)
 
+pa_mod_surface_change = lm(change21_10 ~ pa_change, data = fun_table_soil) # reports significance but its all about the outlier
+summary(pa_mod_surface_change)
+
+pa_mod_depth_change = lm(change21_40 ~ pa_change, data = fun_table_soil)
+summary(pa_mod_depth_change)
+
+
+
+ggplot(fun_table_soil, aes(x = pa_change, y = change21_10)) +
+  geom_point()
+
 ```
+### Plot
+
+```{r}
+(pg_plot = ggplot(fun_table_soil, aes(x = perennial_grass, y = change21_10)) +
+  geom_point() +
+  # xlim(0, 0.5) +
+  geom_smooth(method = "lm", color = "black") +
+  theme_bw() +
+  # theme(axis.title = element_text()) +
+  xlab("Perennial Grass Cover 2018") +
+  ylab("Change % SOC 0-10cm 2018-21"))
+
+(pg_plot40 = ggplot(fun_table_soil, aes(x = perennial_grass, y = change21_40)) +
+  geom_point() +
+  # xlim(0, 0.5) +
+  geom_smooth(method = "lm", color = "black") +
+  theme_bw() +
+  # theme(axis.title = element_text()) +
+  xlab("Perennial Grass Cover 2018") +
+  ylab("Change % SOC 10-40cm 2018-21"))
+
+(ag_plot = ggplot(fun_table_soil, aes(x = annual_grass, y = change21_10)) +
+  geom_point() +
+  # xlim(0, 0.5) +
+  geom_smooth(method = "lm", color = "black") +
+  theme_bw() +
+  # theme(axis.title = element_text()) +
+  xlab("Annaul Grass Cover 2018") +
+  ylab("Change % SOC 0-10cm 2018-21"))
+
+(ag_plot40 = ggplot(fun_table_soil, aes(x = annual_grass, y = change21_40)) +
+  geom_point() +
+  # xlim(0, 0.5) +
+  geom_smooth(method = "lm", color = "black") +
+  theme_bw() +
+  # theme(axis.title = element_text()) +
+  xlab("Annual Grass Cover 2018") +
+  ylab("Change % SOC 10-40cm 2018-21"))
+
+
+
+```
+
 
 
 ## Diversity analyses
@@ -2618,3 +2855,272 @@ div_change_surf = lm(change21_40 ~ diversity_change, data = diversity_soil)
 summary(div_change_surf)
 
 ```
+
+
+## Canopy
+
+Join to soil data
+```{r}
+
+canopy_change = canopy_cover %>% 
+  ungroup() %>% 
+  group_by(point_id) %>% 
+  filter(n() > 1) %>% 
+  summarise(canopy_change = diff(percent_cover))
+
+canopy_soil = canopy_cover %>% 
+  filter(year == 2018) %>% 
+  filter(point_id %in% rownames(soil_veg)) %>% 
+  left_join(soil_veg %>% rownames_to_column("point_id"), by = "point_id") %>% 
+  left_join(canopy_change, by = "point_id")
+
+
+
+```
+
+### Models
+
+```{r}
+canopy_surface_current = lm(`2018_10` ~ percent_cover, data = canopy_soil)
+summary(canopy_surface_current)
+
+canopy_depth_current = lm(`2018_40` ~ percent_cover, data = canopy_soil)
+summary(canopy_depth_current)
+
+canopy_surface_recent = lm(change18_10 ~ percent_cover, data = canopy_soil)
+summary(canopy_surface_recent)
+
+canopy_depth_recent = lm(change18_40 ~ percent_cover, data = canopy_soil)
+summary(canopy_depth_recent)
+
+canopy_surface_future = lm(change21_10 ~ percent_cover, data = canopy_soil)
+summary(canopy_surface_future)
+
+canopy_depth_future = lm(change21_40 ~ percent_cover, data = canopy_soil)
+summary(canopy_depth_future)
+
+canopy_surface_future_change = lm(change21_10 ~ canopy_change, data = canopy_soil)
+summary(canopy_surface_future_change) ## significant
+
+canopy_depth_future_change = lm(change21_40 ~ canopy_change, data = canopy_soil)
+summary(canopy_depth_future_change)
+
+plot(canopy_surface_future_change)
+
+```
+
+### Canopy Plot
+
+```{r}
+(canopy_plot = ggplot(canopy_soil, aes(x = canopy_change, y = change21_10)) +
+  geom_point() +
+  # xlim(0, 0.5) +
+  geom_smooth(method = "lm", color = "black") +
+  theme_bw() +
+  # theme(axis.title = element_text()) +
+  xlab("Change in Woody Cover 2018-2021") +
+  ylab("Change % SOC 0-10cm 2018-21"))
+
+(canopy_plot40 = ggplot(canopy_soil, aes(x = canopy_change, y = change21_40)) +
+  geom_point() +
+  # xlim(0, 0.5) +
+  # geom_smooth(method = "lm", color = "black") +
+  theme_bw() +
+  # theme(axis.title = element_text()) +
+  xlab("Change in Woody Cover 2018-2021") +
+  ylab("Change % SOC 10-40cm 2018-21"))
+
+
+ggsave(here::here("documents/figures/canopy_plot.png"), dpi = 300, plot = canopy_plot, device = "png", width = 8, height = 6)
+
+```
+
+## Plot all veg groups
+
+```{r}
+(veg_plot = ggarrange(pg_plot, pg_plot40, ag_plot, ag_plot40, canopy_plot, canopy_plot40, ncol = 2, nrow = 3, labels = "AUTO"))
+
+ggsave(here::here("documents/figures/veg_functions_all.png"), dpi = 300, plot = veg_plot, device = "png", width = 10, height = 12)
+
+```
+
+
+# Combined analyses
+
+##current soc 
+
+C:O, fungal richness
+```{r}
+
+bact_fung_current = fam_carbon_function %>% 
+  rownames_to_column() %>% 
+  left_join(fungal_richness %>% rownames_to_column(), by = "rowname") %>% 
+  select(rowname, `2018`, change18, change21, c_o_ratio, richness, depth_text) %>% 
+  column_to_rownames("rowname")
+
+bact_fung_current10 = bact_fung_current %>% 
+  filter(depth_text == "0-10 cm")
+
+bact_fung_current40 = bact_fung_current %>% 
+  filter(depth_text == "10-40 cm")
+
+GGally::ggpairs(bact_fung_current10)
+GGally::ggpairs(bact_fung_current40)
+
+
+```
+
+
+
+### surface
+```{r}
+c_o_fung_richness10_full = lm(`2018` ~ richness + c_o_ratio + c_o_ratio:richness, data = bact_fung_current10)
+summary(c_o_fung_richness10_full)
+
+
+stepAIC(c_o_fung_richness10_full)
+
+c_o_fung_richness10_noint = lm(`2018` ~ richness + c_o_ratio, data = bact_fung_current10)
+summary(c_o_fung_richness10_noint)
+
+
+AIC(c_o_fung_richness10_full, c_o_fung_richness10_noint)
+
+  plot(c_o_fung_richness10_noint)
+
+
+
+```
+
+### depth
+
+Only c_o was good for depth
+
+```{r}
+c_o_fung_richness40_full = lm(`2018` ~ richness + c_o_ratio + c_o_ratio:richness, data = bact_fung_current40)
+summary(c_o_fung_richness40_full)
+
+c_o_fung_richness40_noint = lm(`2018` ~ richness + c_o_ratio, data = bact_fung_current40)
+summary(c_o_fung_richness40_fullx)
+
+AIC(c_o_fung_richness40_full, c_o_fung_richness40_noint)
+```
+
+
+
+## past soc
+
+Plant diversity (surface), fungal richness (depth)
+Ok so no multiple predictors
+```{r}
+
+```
+
+## future soc
+
+perennial grass/annual grass, woody change, bacterial c:o, bacterial richness, saprotroph
+
+```{r}
+
+canopy_change10 = canopy_change %>% 
+  mutate(rowname = paste(point_id, "-10", sep = ""))
+
+canopy_change40 = canopy_change %>% 
+  mutate(rowname = paste(point_id, "-40", sep = ""))
+
+future_table_soil10 = fun_table_soil %>% 
+  mutate(rowname = paste(rowname, "-10", sep = "")) %>% 
+  select(rowname, perennial_grass, annual_grass, change21_10) %>% 
+  left_join(canopy_change10, by = "rowname") %>% 
+  left_join(fam_carbon_function10 %>% rownames_to_column %>% select(rowname, c_o_ratio), by = "rowname") %>% 
+  left_join(microbe_richness %>% rownames_to_column(), by = "rowname") %>% 
+  left_join(guild_carbon10 %>% select(saprotroph_only) %>% rownames_to_column(), by = "rowname") %>% 
+  column_to_rownames("rowname") %>% 
+  filter(!is.na(change21_10))
+
+future_table_soil40 = fun_table_soil %>% 
+  mutate(rowname = paste(rowname, "-40", sep = "")) %>% 
+  select(rowname, perennial_grass, annual_grass, change21_40) %>% 
+  left_join(canopy_change40, by = "rowname") %>% 
+  left_join(fam_carbon_function40 %>% rownames_to_column %>% select(rowname, c_o_ratio), by = "rowname") %>% 
+  left_join(microbe_richness %>% rownames_to_column(), by = "rowname") %>% 
+  left_join(guild_carbon40 %>% select(saprotroph_only) %>% rownames_to_column(), by = "rowname") %>% 
+  column_to_rownames("rowname") %>% 
+  filter(!is.na(change21_40))
+
+
+GGally::ggpairs(future_table_soil10)
+GGally::ggpairs(future_table_soil40)
+
+```
+
+### surface
+
+perennial/annual grass are correlated, c_o and richness are correlated
+```{r}
+full_future_mod10 = lm(change21_10 ~ perennial_grass + canopy_change + c_o_ratio + saprotroph_only, data = future_table_soil10)
+summary(full_future_mod10)
+
+
+
+stepAIC(full_future_mod10)
+
+#easy to interpret, avoids interactions
+future_mod10_no_woody_noint = lm(change21_10 ~ c_o_ratio + perennial_grass + saprotroph_only, data = future_table_soil10)
+summary(future_mod10_no_woody_noint)
+
+
+##best
+future_mod10_no_woody = lm(change21_10 ~ c_o_ratio + perennial_grass + saprotroph_only + c_o_ratio:saprotroph_only, data = future_table_soil10)
+summary(future_mod10_no_woody)
+
+#lower AIC but harder to interpret
+future_mod10_no_fungus = lm(change21_10 ~ c_o_ratio + perennial_grass + c_o_ratio:saprotroph_only, data = future_table_soil10)
+summary(future_mod10_no_fungus)
+
+stepAIC(future_mod10_no_woody)
+
+AIC(future_mod10_no_woody, future_mod10_no_woody_noint, future_mod10_no_fungus)
+
+
+
+
+
+
+```
+
+```{r}
+full_richness_future_mod40 = lm(change21_40 ~ richness*perennial_grass, data = future_table_soil40)
+summary(full_future_mod40)
+
+full_co_future_mod40 = lm(change21_40 ~ c_o_ratio*perennial_grass, data = future_table_soil40)
+summary(full_co_future_mod40)
+
+AIC(full_richness_future_mod40, full_co_future_mod40)
+
+stepAIC(full_richness_future_mod40)
+
+best_future40 = lm(change21_40 ~ richness + c_o_ratio + perennial_grass + richness:c_o_ratio + richness:perennial_grass, data = future_table_soil40)
+summary(best_future40)
+
+future40_noint = lm(change21_40 ~ richness + c_o_ratio + perennial_grass + richness:perennial_grass  + richness:c_o_ratio, data = future_table_soil40)
+summary(future40_noint)
+
+final = lm(change21_40 ~ richness + perennial_grass, data = future_table_soil40)
+summary(final)
+
+AIC(final, full_richness_future_mod40)
+
+plot(best_future40)
+
+stepAIC(full_co_future_mod40)
+
+
+final_co = lm(formula = change21_40 ~ c_o_ratio + perennial_grass, data = future_table_soil40)
+summary(final_co)
+
+
+plot(final_co)
+AIC(final, final_co)
+```
+
