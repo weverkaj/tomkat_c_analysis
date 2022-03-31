@@ -22,10 +22,10 @@ asv_tab_forward = read_csv(here("data/asv_tab_forward_long.csv")) #asv table
 ```
 
 ```
-## -- Column specification --------------------------------------------------------------------------------------------------
+## -- Column specification --------------------------------------------------------------------------------------------------------------------
 ## Delimiter: ","
 ## chr  (1): ...1
-## dbl (94): Bioreactor, MESO.04, MESO.11, MESO.13, MESO.16, MESO.23, MESO.24, MESO.36, MESO.40, MESO.43, MESO.44, Old.st...
+## dbl (94): Bioreactor, MESO.04, MESO.11, MESO.13, MESO.16, MESO.23, MESO.24, MESO.36, MESO.40, MESO.43, MESO.44, Old.sterilized.soil...SP...
 ```
 
 ```
@@ -48,7 +48,7 @@ asv_tab_unite = read_csv(here("data/asv_unite_forward..csv")) #taxon assignments
 ```
 
 ```
-## -- Column specification --------------------------------------------------------------------------------------------------
+## -- Column specification --------------------------------------------------------------------------------------------------------------------
 ## Delimiter: ","
 ## chr (8): ...1, Kingdom, Phylum, Class, Order, Family, Genus, Species
 ```
@@ -68,9 +68,9 @@ asv_guilds = read_csv(here("data/asv_unite_forward_ff.guilds.csv")) %>% clean_na
 ```
 
 ```
-## -- Column specification --------------------------------------------------------------------------------------------------
+## -- Column specification --------------------------------------------------------------------------------------------------------------------
 ## Delimiter: ","
-## chr (11): sequence, taxonomy, Taxon, Taxon Level, Trophic Mode, Guild, Growth Morphology, Trait, Confidence Ranking, N...
+## chr (11): sequence, taxonomy, Taxon, Taxon Level, Trophic Mode, Guild, Growth Morphology, Trait, Confidence Ranking, Notes, Citation/Source
 ```
 
 ```

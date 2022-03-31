@@ -629,7 +629,7 @@ ggsave(here::here("documents/figures/bact_richness_soc.png"), dpi = 300, plot = 
         legend.text = element_text(size = 12),
         strip.background = element_rect(fill="white")) +
   ylab("Change % SOC 2018-21") +
-  xlab("Bacterial/Archaeal ASV richness")+ 
+  xlab("2018 Bacterial/Archaeal ASV richness")+ 
   scale_y_continuous(labels = scales::number_format(accuracy = 0.1)))
 
 ggsave(here::here("documents/figures/bact_richness_future_change.png"), dpi = 300, plot = bact_richness_change, device = "png", width = 8, height = 6)
@@ -843,7 +843,7 @@ scores_16s_10_no = as.data.frame(scores(NMDS_16S_10_no)) %>%
   geom_text(data = depth_scores_plot10_complete, aes(label = variable),
             size = 4, color = "black") +
   geom_text(data = fam_16_scores10, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "blue") +
-  scale_color_viridis_b(name = "% Organic C") +
+  scale_color_viridis_c(name = "% Organic C", limits = c(2, 5), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5), labels=c(2, 3, 4, ">5")) +
   geom_text(aes(label = paste("stress = ", round(NMDS_16S_10$stress, 3)), x = -0.8, y = -.6), size = 4, color = "black") + 
   theme_bw()+
   theme(axis.text.x = element_blank(),
@@ -982,7 +982,7 @@ scores_16s_40_no = as.data.frame(scores(NMDS_16S_40_no)) %>%
   geom_text(data = depth_scores_plot40_complete, aes(label = variable),
             size = 4, color = "black") +
   geom_text(data = fam_16_scores40, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "blue") +
-  scale_color_viridis_c(name = "% Organic C") +
+  scale_color_viridis_c(name = "% Organic C", limits = c(1, 3), na.value = "#FDE725FF", breaks = c(1, 2, 3), labels=c(1, 2, ">3")) + 
   geom_text(aes(label = paste("stress = ", round(NMDS_16S_40$stress, 3)), x = 0.8, y = -.7), size = 4, color = "black") + 
   theme_bw() +
   theme(axis.text.x = element_blank(),
@@ -1707,7 +1707,7 @@ scores_fungal_10_no = as.data.frame(scores(NMDS_fungal_10_no)) %>%
   geom_text(data = depth_scores_fungal_plot10_complete, aes(label = variable),
             size = 4, color = "black") +
   # geom_text(data = fung_function_scores10, mapping = aes(x = NMDS1, y = NMDS2, label = rowname), color = "blue") +
-  scale_color_viridis_b(name = "% Organic C") +
+  scale_color_viridis_c(name = "% Organic C", limits = c(2, 5), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5), labels=c(2, 3, 4, ">5")) +
   geom_text(aes(label = paste("stress = ", round(NMDS_fungal_10$stress, 3)), x = -0.4, y = -.6), size = 4, color = "black") +
   theme_bw())
 
@@ -1821,7 +1821,7 @@ scores_fungal_40_no = as.data.frame(scores(NMDS_fungal_40_no)) %>%
   geom_text(data = depth_scores_fungal_plot40_complete, aes(label = variable),
             size = 4, color = "black") +
   # geom_text(data = fung_function_scores40, mapping = aes(x = NMDS1, y = NMDS2, label = rowname), color = "blue") +
-  scale_color_viridis_b(name = "% Organic C") +
+  scale_color_viridis_c(name = "% Organic C", limits = c(1, 3), na.value = "#FDE725FF", breaks = c(1, 2, 3), labels=c(1, 2, ">3")) + 
   geom_text(aes(label = paste("stress = ", round(NMDS_fungal_40$stress, 3)), x = -0.2, y = -.3), size = 4, color = "black") +
   theme_bw())
 
@@ -2460,11 +2460,11 @@ veg_scores = as.data.frame(scores(vegNMDS)) %>%
   geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS2, label = label),
             size = 6, box.padding = 0.25) +
   geom_text_repel(data = fun_grp_scores_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue", size = 6) +
-  scale_color_viridis_c(name = "% Organic C 0-10 cm")+  
-  theme_bw()) +
-  theme(axis.title = element_text(size = 14))
+  scale_color_viridis_c(name = "% Organic C 0-10 cm", limits = c(2, 5), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5), labels=c(2, 3, 4, ">5")) +
+  theme(axis.title = element_text(size = 14))+
+  theme_bw())
 
-ggsave(here::here("documents/figures/0_10_veg_NMDS_12.png"), dpi = 300, plot = veg_1_2, device = "png", width = 8, height = 6)
+# ggsave(here::here("documents/figures/0_10_veg_NMDS_12.png"), dpi = 300, plot = veg_1_2, device = "png", width = 8, height = 6)
 
 
 ```
@@ -2478,7 +2478,7 @@ ggsave(here::here("documents/figures/0_10_veg_NMDS_12.png"), dpi = 300, plot = v
   geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS3, label = label),
             size = 6, box.padding = 0.25) +
   geom_text_repel(data = fun_grp_scores_plot, mapping = aes(x = NMDS1, y = NMDS3, label = functional_group), color = "blue", size = 6) +
-  scale_color_viridis_c(name = "% Organic C") +
+  scale_color_viridis_c(name = "% Organic C 0-10 cm", limits = c(2, 5), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5), labels=c(2, 3, 4, ">5")) +
   theme_bw())  +
   theme(axis.title = element_text(size = 14))
 
