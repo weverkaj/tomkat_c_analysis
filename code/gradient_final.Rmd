@@ -127,6 +127,18 @@ change40_future = change40 %>%
 
 ```
 
+#### Testing changes
+```{r}
+
+t.test(change10_future$change18)
+t.test(change10_future$change21)
+
+t.test(change40_future$change18)
+t.test(change40_future$change21)
+
+```
+
+
 #16S data prep
 
 ## Read-in
@@ -197,7 +209,12 @@ asv_guilds = read_csv(here("data/asv_unite_forward_ff.guilds.csv")) %>% clean_na
 
 asv_table = asv_tab_forward %>% 
   select(contains("TOKA")) %>% 
-  clean_names(case = "all_caps")
+  clean_names(case = "all_caps") %>% 
+  select(-TOKA_099_10) %>% 
+  t() %>% 
+  rrarefy(sample = min(rowSums(.))) %>% 
+  t() %>% 
+  as.data.frame()
 
 colnames(asv_table) = str_replace_all(colnames(asv_table), "_", "-")
 
@@ -208,8 +225,7 @@ asv_table_standard = asv_table %>%
   t() %>% 
   decostand(method = "total") %>% 
   t() %>% 
-  as.data.frame() %>% 
-  select(-`TOKA-099-10`)
+  as.data.frame() 
 
 asv_table_guilds = asv_table_standard %>% 
   rownames_to_column() %>% 
@@ -617,7 +633,7 @@ ggsave(here::here("documents/figures/bact_richness_soc.png"), dpi = 300, plot = 
 
 ```{r}
 
-(bact_richness_change = ggplot(microbe_diversity_soil, aes(x = richness, y = change21)) +
+(bact_richness_change = ggplot(microbe_diversity_soil, aes(x = richness, y = change21 * 10)) +
   geom_point() +
   facet_wrap(. ~ depth_text) +
   geom_smooth(data = microbe_diversity_soil40, method = "lm", linetype = "dashed", color = "black") +
@@ -628,7 +644,7 @@ ggsave(here::here("documents/figures/bact_richness_soc.png"), dpi = 300, plot = 
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 12),
         strip.background = element_rect(fill="white")) +
-  ylab("Change % SOC 2018-21") +
+  ylab(expression("SOC Change 2018-2021 (g C kg soil " ^ "-1" * ")")) +
   xlab("2018 Bacterial/Archaeal ASV richness")+ 
   scale_y_continuous(labels = scales::number_format(accuracy = 0.1)))
 
@@ -835,7 +851,7 @@ scores_16s_10_no = as.data.frame(scores(NMDS_16S_10_no)) %>%
 
 ### plots
 ```{r}
-(plot16s_10 = ggplot(scores_16s_10, aes(NMDS1, NMDS2, color = `2018`)) +
+(plot16s_10 = ggplot(scores_16s_10, aes(NMDS1, NMDS2, color = `2018` * 10)) +
   geom_point(size = 3) +
   geom_segment(data = depth_scores_plot10_complete, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "blue", 
@@ -843,7 +859,7 @@ scores_16s_10_no = as.data.frame(scores(NMDS_16S_10_no)) %>%
   geom_text(data = depth_scores_plot10_complete, aes(label = variable),
             size = 4, color = "black") +
   geom_text(data = fam_16_scores10, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "blue") +
-  scale_color_viridis_c(name = "% Organic C", limits = c(2, 5), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5), labels=c(2, 3, 4, ">5")) +
+  scale_color_viridis_c(name = expression("SOC 0-10cm\n  (g C kg soil"^"-1"*")"), limits = c(20, 50), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5) *10, labels=c(20, 30, 40, ">50")) +
   geom_text(aes(label = paste("stress = ", round(NMDS_16S_10$stress, 3)), x = -0.8, y = -.6), size = 4, color = "black") + 
   theme_bw()+
   theme(axis.text.x = element_blank(),
@@ -974,7 +990,7 @@ scores_16s_40_no = as.data.frame(scores(NMDS_16S_40_no)) %>%
 
 ```{r}
 
-(plot16s_40 = ggplot(scores_16s_40, aes(NMDS1, NMDS2, color = `2018`)) +
+(plot16s_40 = ggplot(scores_16s_40, aes(NMDS1, NMDS2, color = `2018` * 10)) +
   geom_point(size = 3) +
   geom_segment(data = depth_scores_plot40_complete, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "blue", 
@@ -982,7 +998,7 @@ scores_16s_40_no = as.data.frame(scores(NMDS_16S_40_no)) %>%
   geom_text(data = depth_scores_plot40_complete, aes(label = variable),
             size = 4, color = "black") +
   geom_text(data = fam_16_scores40, mapping = aes(x = NMDS1, y = NMDS2, label = phylum), color = "blue") +
-  scale_color_viridis_c(name = "% Organic C", limits = c(1, 3), na.value = "#FDE725FF", breaks = c(1, 2, 3), labels=c(1, 2, ">3")) + 
+  scale_color_viridis_c(name = expression("SOC 10-40cm\n    (g C kg soil"^"-1"*")"), limits = c(10, 30), na.value = "#FDE725FF", breaks = c(10, 20, 30), labels=c(10, 20, ">30")) + 
   geom_text(aes(label = paste("stress = ", round(NMDS_16S_40$stress, 3)), x = 0.8, y = -.7), size = 4, color = "black") + 
   theme_bw() +
   theme(axis.text.x = element_blank(),
@@ -1343,7 +1359,7 @@ summary(trait_mod40)
 ### plots
 
 ```{r}
-(function_16S_plot = ggplot(fam_carbon_function, (aes(x = c_o_ratio, y = `2018`))) +
+(function_16S_plot = ggplot(fam_carbon_function, (aes(x = c_o_ratio, y = `2018` * 10))) +
   geom_point() +
   theme_bw() +
   facet_grid(. ~ depth_text) +
@@ -1355,7 +1371,7 @@ summary(trait_mod40)
         strip.background = element_rect(fill="white")) +
   # geom_smooth(data = fam_carbon_function %>% filter(depth_cm == "0 to 10"), method = "lm", fill = "darkgreen", alpha = 0.1) +
   geom_smooth(method = "lm", color = "black", linetype = "dashed") +
-  ylab("% Organic Carbon 2018") +
+  ylab(expression("SOC 2018 (g C kg soil " ^ "-1" * ")")) +
   xlab("2018 Copiotroph:Oligotroph Ratio")+ 
   scale_y_continuous(labels = scales::number_format(accuracy = 0.01)))
 
@@ -1367,7 +1383,7 @@ ggsave(here::here("documents/figures/bact_function_2018.png"), dpi = 300, plot =
 ```
 
 ```{r}
-(function_16S_plot_future = ggplot(fam_carbon_function, (aes(x = c_o_ratio, y = change21))) +
+(function_16S_plot_future = ggplot(fam_carbon_function, (aes(x = c_o_ratio, y = change21 * 10))) +
   geom_point() +
   theme_bw() +
   facet_grid(. ~ depth_text) +
@@ -1379,7 +1395,8 @@ ggsave(here::here("documents/figures/bact_function_2018.png"), dpi = 300, plot =
         strip.background = element_rect(fill="white")) +
   # geom_smooth(data = fam_carbon_function %>% filter(depth_cm == "0 to 10"), method = "lm", fill = "darkgreen", alpha = 0.1) +
   geom_smooth(method = "lm", color = "black", linetype = "dashed") +
-  ylab("Change % Organic Carbon 2018-21") +
+  # ylab(expression("2018 Organic Carbon (g C kg soil " ^ "-1"))
+  ylab(expression("SOC Change 2018-2021 (g C kg soil " ^ "-1" * ")")) +
   xlab("2018 Copiotroph:Oligotroph Ratio") + 
   scale_y_continuous(labels = scales::number_format(accuracy = 0.1)))
 
@@ -1490,7 +1507,7 @@ ggplot(fungal_diversity_soil40, aes(x = richness, y = change18)) +
 ### plot
 ```{r}
 
-(fung_richness = ggplot(fungal_diversity_soil, aes(x = richness, y = `2018`)) +
+(fung_richness = ggplot(fungal_diversity_soil, aes(x = richness, y = `2018` * 10)) +
   geom_point() +
     theme_bw() +
   facet_wrap(. ~ depth_text) +
@@ -1501,9 +1518,9 @@ ggplot(fungal_diversity_soil40, aes(x = richness, y = change18)) +
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 12),
         strip.background = element_rect(fill="white")) +
-  ylab("% SOC 2018") +
+  ylab(expression("2018 SOC (g C kg soil" ^ "-1" * ")")) +
   xlab("Fungal ASV Richness 2018") + 
-  scale_y_continuous(labels = scales::number_format(accuracy = 0.01)))
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.1)))
 
 ggsave(here::here("documents/figures/fungal_diversity_2018.png"), dpi = 300, plot = fung_richness, device = "png", width = 8, height = 6)
 
@@ -1515,7 +1532,7 @@ ggsave(here::here("documents/figures/fungal_diversity_2018.png"), dpi = 300, plo
 
 ```{r}
 
-(fung_richness_recent = ggplot(fungal_diversity_soil, aes(x = richness, y = change18)) +
+(fung_richness_recent = ggplot(fungal_diversity_soil, aes(x = richness, y = change18 * 10)) +
   geom_point() +
   theme_bw() +
   facet_wrap(. ~ depth_text) +
@@ -1526,7 +1543,7 @@ ggsave(here::here("documents/figures/fungal_diversity_2018.png"), dpi = 300, plo
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 12),
         strip.background = element_rect(fill="white")) +
-  ylab("Change % SOC 2015-18") +
+  ylab(expression("SOC Change 2015-18 (g C kg soil" ^ "-1" * ")"))  +
   xlab("Fungal ASV Richness 2018"))
 ```
 
@@ -1699,7 +1716,7 @@ scores_fungal_10_no = as.data.frame(scores(NMDS_fungal_10_no)) %>%
 ### plots
 
 ```{r}
-(fung_plot10 = ggplot(scores_fungal_10, aes(NMDS1, NMDS2, color = `2018`)) +
+(fung_plot10 = ggplot(scores_fungal_10, aes(NMDS1, NMDS2, color = `2018` * 10)) +
   geom_point(size = 3) +
   geom_segment(data = depth_scores_fungal_plot10_complete, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "blue", 
@@ -1707,7 +1724,7 @@ scores_fungal_10_no = as.data.frame(scores(NMDS_fungal_10_no)) %>%
   geom_text(data = depth_scores_fungal_plot10_complete, aes(label = variable),
             size = 4, color = "black") +
   # geom_text(data = fung_function_scores10, mapping = aes(x = NMDS1, y = NMDS2, label = rowname), color = "blue") +
-  scale_color_viridis_c(name = "% Organic C", limits = c(2, 5), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5), labels=c(2, 3, 4, ">5")) +
+  scale_color_viridis_c(name = expression("SOC 0-10cm\n  (g C kg soil"^"-1"*")"), limits = c(20, 50), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5) * 10, labels=c(20, 30, 40, ">50")) +
   geom_text(aes(label = paste("stress = ", round(NMDS_fungal_10$stress, 3)), x = -0.4, y = -.6), size = 4, color = "black") +
   theme_bw())
 
@@ -1813,7 +1830,7 @@ scores_fungal_40_no = as.data.frame(scores(NMDS_fungal_40_no)) %>%
 
 ### plots
 ```{r}
-(fung_plot40 = ggplot(scores_fungal_40, aes(NMDS1, NMDS2, color = `2018`)) +
+(fung_plot40 = ggplot(scores_fungal_40, aes(NMDS1, NMDS2, color = `2018` * 10)) +
   geom_point(size = 3) +
   geom_segment(data = depth_scores_fungal_plot40_complete, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "blue", 
@@ -1821,7 +1838,7 @@ scores_fungal_40_no = as.data.frame(scores(NMDS_fungal_40_no)) %>%
   geom_text(data = depth_scores_fungal_plot40_complete, aes(label = variable),
             size = 4, color = "black") +
   # geom_text(data = fung_function_scores40, mapping = aes(x = NMDS1, y = NMDS2, label = rowname), color = "blue") +
-  scale_color_viridis_c(name = "% Organic C", limits = c(1, 3), na.value = "#FDE725FF", breaks = c(1, 2, 3), labels=c(1, 2, ">3")) + 
+  scale_color_viridis_c(name = expression("SOC 10-40cm\n    (g C kg soil"^"-1"*")"), limits = c(10, 30), na.value = "#FDE725FF", breaks = c(10, 20, 30), labels=c(10, 20, ">30")) + 
   geom_text(aes(label = paste("stress = ", round(NMDS_fungal_40$stress, 3)), x = -0.2, y = -.3), size = 4, color = "black") +
   theme_bw())
 
@@ -2281,7 +2298,7 @@ summary(depth_arbuscular_mycorrhizal_future)
 ### Plots
 
 ```{r}
-(saprotroph_plot = ggplot(guild_carbon, aes(x = saprotroph_only, y = change21)) +
+(saprotroph_plot = ggplot(guild_carbon, aes(x = saprotroph_only, y = change21 * 10)) +
   geom_point() +
   facet_wrap(. ~ depth_text) +
   theme_bw() +
@@ -2292,8 +2309,9 @@ summary(depth_arbuscular_mycorrhizal_future)
         legend.text = element_text(size = 12),
         strip.background = element_rect(fill="white")) +
   geom_smooth(data = guild_carbon10, method = "lm", color = "black", linetype = "dashed") +
-  ylab("% Change SOC 2018-21") +
-  xlab("Saprotroph Relative Abundance 2018"))
+  ylab(expression("SOC Change 2018-21 (g C kg soil" ^ "-1" * ")")) +
+  xlab("Saprotroph Relative Abundance 2018") +
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.1)))
 
 
 ggsave(here::here("documents/figures/saprotroph_plot.png"), dpi = 300, plot = saprotroph_plot, device = "png", width = 8, height = 6)
@@ -2453,14 +2471,14 @@ veg_scores = as.data.frame(scores(vegNMDS)) %>%
 ### plot
 ```{r}
 (veg_1_2 = ggplot(veg_scores, aes(NMDS1, NMDS2)) +
-  geom_point(aes(color = `2018_10`), size = 3) +
+  geom_point(aes(color = `2018_10` * 10), size = 3) +
   geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "black", 
                arrow = arrow(length = unit(0.25, "cm"))) +
   geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS2, label = label),
             size = 6, box.padding = 0.25) +
   geom_text_repel(data = fun_grp_scores_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue", size = 6) +
-  scale_color_viridis_c(name = "% Organic C 0-10 cm", limits = c(2, 5), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5), labels=c(2, 3, 4, ">5")) +
+  scale_color_viridis_c(name = expression("SOC 0-10cm\n  (g C kg soil"^"-1"*")"), limits = c(20, 50), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5) * 10, labels=c(20, 30, 40, ">50")) +
   theme(axis.title = element_text(size = 14))+
   theme_bw())
 
@@ -2471,24 +2489,29 @@ veg_scores = as.data.frame(scores(vegNMDS)) %>%
 
 ```{r}
 (veg_1_3 = ggplot(veg_scores, aes(NMDS1, NMDS3)) +
-  geom_point(aes(color = `2018_10`), size = 3)+
+  geom_point(aes(color = `2018_10` * 10), size = 3)+
   geom_segment(data = soil_veg_scores_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS3), 
                color = "black", 
                arrow = arrow(length = unit(0.25, "cm"))) +
   geom_text_repel(data = soil_veg_scores_plot, aes(x = NMDS1, y = NMDS3, label = label),
             size = 6, box.padding = 0.25) +
   geom_text_repel(data = fun_grp_scores_plot, mapping = aes(x = NMDS1, y = NMDS3, label = functional_group), color = "blue", size = 6) +
-  scale_color_viridis_c(name = "% Organic C 0-10 cm", limits = c(2, 5), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5), labels=c(2, 3, 4, ">5")) +
+  scale_color_viridis_c(name = expression("SOC 0-10cm\n  (g C kg soil"^"-1"*")"), limits = c(20, 50), na.value = "#FDE725FF", breaks = c(2, 3, 4, 5) *10, labels=c(20, 30, 40, ">50")) +
   theme_bw())  +
+  geom_text(aes(label = paste("stress = ", round(vegNMDS$stress, 3)), x = 0.-.85, y = -.6), size = 4, color = "black") +
   theme(axis.title = element_text(size = 14))
 
 ggsave(here::here("documents/figures/0_10_veg_NMDS_13.png"), dpi = 300, plot = veg_1_3, device = "png", width = 8, height = 6)
 ```
+
+
+
 ```{r}
 library(ggpubr)
 
 (veg_NMDS_all = ggarrange(veg_1_2, veg_1_3, common.legend = TRUE, legend = "right", ncol = 1)  +
-  theme(axis.title = element_text(size = 12)))
+  theme(axis.title = element_text(size = 12)) +
+  geom_text(aes(label = paste("stress = ", round(vegNMDS$stress, 3)), x = 0.-.85, y = -.6), size = 4, color = "black"))
 
 ggsave(here::here("documents/figures/veg_NMDS_all.png"), dpi = 300, plot = veg_NMDS_all, device = "png", width = 8, height = 12)
 
@@ -2548,14 +2571,14 @@ veg_scores_future = as.data.frame(scores(veg_future_NMDS))
 
 ```{r}
 (veg_future = ggplot(veg_scores_future, aes(NMDS1, NMDS2)) +
-  geom_point(aes(color = change21_10), size = 3) +
+  geom_point(aes(color = change21_10 * 10), size = 3) +
   geom_segment(data = soil_veg_scores_future_plot, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), 
                color = "black", 
                arrow = arrow(length = unit(0.25, "cm"))) +
   geom_text_repel(data = soil_veg_scores_future_plot, aes(x = NMDS1, y = NMDS2, label = label),
             size = 6, box.padding = 0.1) +
   geom_text_repel(data = fun_grp_scores_future_plot, mapping = aes(x = NMDS1, y = NMDS2, label = functional_group), color = "blue", size = 6) +
-  scale_color_viridis_c(name = "Change 2018-21 \n%SOC 0-10 cm ") + 
+  scale_color_viridis_c(name = expression("SOC Change 2018-21\n    0-10cm (g C kg soil"^"-1"*")")) + 
   theme_bw()) +
   theme(axis.title = element_text(size = 14))
 
@@ -2747,46 +2770,67 @@ ggplot(fun_table_soil, aes(x = pa_change, y = change21_10)) +
 ### Plot
 
 ```{r}
-(pg_plot = ggplot(fun_table_soil, aes(x = perennial_grass, y = change21_10)) +
+(pg_plot = ggplot(fun_table_soil, aes(x = perennial_grass, y = change21_10 * 10)) +
   geom_point() +
   # xlim(0, 0.5) +
   geom_smooth(method = "lm", color = "black") +
   theme_bw() +
   # theme(axis.title = element_text()) +
   xlab("Perennial Grass Cover 2018") +
-  ylab("Change % SOC 0-10cm 2018-21"))
+  ylab(expression("SOC 0-10 cm Change 2018-21 (g C kg soil" ^ "-1" * ")"))) 
 
-(pg_plot40 = ggplot(fun_table_soil, aes(x = perennial_grass, y = change21_40)) +
+(pg_plot40 = ggplot(fun_table_soil, aes(x = perennial_grass, y = change21_40 * 10)) +
   geom_point() +
   # xlim(0, 0.5) +
   geom_smooth(method = "lm", color = "black") +
   theme_bw() +
   # theme(axis.title = element_text()) +
   xlab("Perennial Grass Cover 2018") +
-  ylab("Change % SOC 10-40cm 2018-21"))
+  ylab(expression("SOC 10-40 cm Change 2018-21 (g C kg soil" ^ "-1" * ")"))) 
 
-(ag_plot = ggplot(fun_table_soil, aes(x = annual_grass, y = change21_10)) +
-  geom_point() +
-  # xlim(0, 0.5) +
-  geom_smooth(method = "lm", color = "black") +
-  theme_bw() +
-  # theme(axis.title = element_text()) +
-  xlab("Annaul Grass Cover 2018") +
-  ylab("Change % SOC 0-10cm 2018-21"))
-
-(ag_plot40 = ggplot(fun_table_soil, aes(x = annual_grass, y = change21_40)) +
+(ag_plot = ggplot(fun_table_soil, aes(x = annual_grass, y = change21_10 * 10)) +
   geom_point() +
   # xlim(0, 0.5) +
   geom_smooth(method = "lm", color = "black") +
   theme_bw() +
   # theme(axis.title = element_text()) +
   xlab("Annual Grass Cover 2018") +
-  ylab("Change % SOC 10-40cm 2018-21"))
+  ylab(expression("SOC 0-10 cm Change 2018-21 (g C kg soil" ^ "-1" * ")")))
+
+(ag_plot40 = ggplot(fun_table_soil, aes(x = annual_grass, y = change21_40 * 10)) +
+  geom_point() +
+  # xlim(0, 0.5) +
+  geom_smooth(method = "lm", color = "black") +
+  theme_bw() +
+  # theme(axis.title = element_text()) +
+  xlab("Annual Grass Cover 2018") +
+  ylab(expression("SOC 10-40 cm Change 2018-21 (g C kg soil" ^ "-1" * ")"))) 
 
 
 
 ```
 
+```{r}
+(pg_plot_l = ggplot(fun_table_soil, aes(x = perennial_grass, y = change21_10)) +
+  geom_point() +
+  # xlim(0, 0.5) +
+  geom_smooth(method = "lm", color = "black") +
+  geom_label_repel(aes(label = rowname), min.segment.length = 0) +
+  theme_bw() +
+  # theme(axis.title = element_text()) +
+  xlab("Perennial Grass Cover 2018") +
+  ylab("Change % SOC 0-10cm 2018-21"))
+
+(pg_plot40_l = ggplot(fun_table_soil, aes(x = perennial_grass, y = change21_40)) +
+  geom_point() +
+  # xlim(0, 0.5) +
+  geom_smooth(method = "lm", color = "black") +
+  geom_label_repel(aes(label = rowname), min.segment.length = 0) +  
+  theme_bw() +
+  # theme(axis.title = element_text()) +
+  xlab("Perennial Grass Cover 2018") +
+  ylab("Change % SOC 10-40cm 2018-21"))
+```
 
 
 ## Diversity analyses
@@ -2912,23 +2956,23 @@ plot(canopy_surface_future_change)
 ### Canopy Plot
 
 ```{r}
-(canopy_plot = ggplot(canopy_soil, aes(x = canopy_change, y = change21_10)) +
+(canopy_plot = ggplot(canopy_soil, aes(x = canopy_change, y = change21_10 * 10)) +
   geom_point() +
   # xlim(0, 0.5) +
   geom_smooth(method = "lm", color = "black") +
   theme_bw() +
   # theme(axis.title = element_text()) +
-  xlab("Change in Woody Cover 2018-2021") +
-  ylab("Change % SOC 0-10cm 2018-21"))
+  xlab("Change in Woody Cover 2018-21") +
+  ylab(expression("SOC 0-10 cm Change 2018-21 (g C kg soil" ^ "-1" * ")"))) 
 
-(canopy_plot40 = ggplot(canopy_soil, aes(x = canopy_change, y = change21_40)) +
+(canopy_plot40 = ggplot(canopy_soil, aes(x = canopy_change, y = change21_40 * 10)) +
   geom_point() +
   # xlim(0, 0.5) +
   # geom_smooth(method = "lm", color = "black") +
   theme_bw() +
   # theme(axis.title = element_text()) +
-  xlab("Change in Woody Cover 2018-2021") +
-  ylab("Change % SOC 10-40cm 2018-21"))
+  xlab("Change in Woody Cover 2018-21") +
+  ylab(expression("SOC 10-40 cm Change 2018-21 (g C kg soil" ^ "-1" * ")"))) 
 
 
 ggsave(here::here("documents/figures/canopy_plot.png"), dpi = 300, plot = canopy_plot, device = "png", width = 8, height = 6)
@@ -3001,7 +3045,7 @@ c_o_fung_richness40_full = lm(`2018` ~ richness + c_o_ratio + c_o_ratio:richness
 summary(c_o_fung_richness40_full)
 
 c_o_fung_richness40_noint = lm(`2018` ~ richness + c_o_ratio, data = bact_fung_current40)
-summary(c_o_fung_richness40_fullx)
+summary(c_o_fung_richness40_noint)
 
 AIC(c_o_fung_richness40_full, c_o_fung_richness40_noint)
 ```
@@ -3088,13 +3132,24 @@ AIC(future_mod10_no_woody, future_mod10_no_woody_noint, future_mod10_no_fungus)
 
 
 ```
+### depth
 
 ```{r}
 full_richness_future_mod40 = lm(change21_40 ~ richness*perennial_grass, data = future_table_soil40)
-summary(full_future_mod40)
+
+
+full_richness_future_mod40_noint = lm(change21_40 ~ richness + perennial_grass, data = future_table_soil40)
+summary(full_richness_future_mod40_noint)
+
+AIC(full_richness_future_mod40, full_richness_future_mod40_noint)
 
 full_co_future_mod40 = lm(change21_40 ~ c_o_ratio*perennial_grass, data = future_table_soil40)
 summary(full_co_future_mod40)
+
+full_co_future_mod40_noint = lm(change21_40 ~ c_o_ratio + perennial_grass, data = future_table_soil40)
+summary(full_co_future_mod40_noint)
+
+AIC(full_co_future_mod40, full_co_future_mod40_noint)
 
 AIC(full_richness_future_mod40, full_co_future_mod40)
 
@@ -3109,7 +3164,7 @@ summary(future40_noint)
 final = lm(change21_40 ~ richness + perennial_grass, data = future_table_soil40)
 summary(final)
 
-AIC(final, full_richness_future_mod40)
+AIC(final, full_richness_future_mod40, future40_noint, )
 
 plot(best_future40)
 

@@ -9,6 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(janitor)
 library(vegan)
+library(here)
 ```
 
 
@@ -20,6 +21,7 @@ asv_guilds = read_csv(here("data/asv_unite_forward_ff.guilds.csv")) %>% clean_na
 
 ```
 
+Rarefy to 45316 which is the toka-057-40 depth
 
 
 
@@ -27,9 +29,18 @@ asv_guilds = read_csv(here("data/asv_unite_forward_ff.guilds.csv")) %>% clean_na
 
 asv_table = asv_tab_forward %>% 
   select(contains("TOKA")) %>% 
-  clean_names(case = "all_caps")
+  clean_names(case = "all_caps") %>% 
+  select(-TOKA_099_10) %>% 
+  t() %>% 
+  rrarefy(sample = min(rowSums(.))) %>% 
+  t() %>% 
+  as.data.frame()
+
+
 
 colnames(asv_table) = str_replace_all(colnames(asv_table), "_", "-")
+
+
   
   
 ```

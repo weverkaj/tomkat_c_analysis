@@ -19,16 +19,10 @@ asv_tab_forward = read_csv(here("data/asv_tab_forward_long.csv")) #asv table
 
 ```
 ## Rows: 42601 Columns: 95
-```
-
-```
-## -- Column specification --------------------------------------------------------------------------------------------------------------------
+## -- Column specification -----------------------------------------------------------------------------------------------------
 ## Delimiter: ","
 ## chr  (1): ...1
-## dbl (94): Bioreactor, MESO.04, MESO.11, MESO.13, MESO.16, MESO.23, MESO.24, MESO.36, MESO.40, MESO.43, MESO.44, Old.sterilized.soil...SP...
-```
-
-```
+## dbl (94): Bioreactor, MESO.04, MESO.11, MESO.13, MESO.16, MESO.23, MESO.24, MESO.36, MESO.40, MESO.43, MESO.44, Old.steri...
 ## 
 ## i Use `spec()` to retrieve the full column specification for this data.
 ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -41,20 +35,9 @@ asv_tab_unite = read_csv(here("data/asv_unite_forward..csv")) #taxon assignments
 ```
 ## New names:
 ## * `` -> ...1
-```
-
-```
-## Rows: 42601 Columns: 8
-```
-
-```
-## -- Column specification --------------------------------------------------------------------------------------------------------------------
+## Rows: 42601 Columns: 8-- Column specification -----------------------------------------------------------------------------------------------------
 ## Delimiter: ","
 ## chr (8): ...1, Kingdom, Phylum, Class, Order, Family, Genus, Species
-```
-
-```
-## 
 ## i Use `spec()` to retrieve the full column specification for this data.
 ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 ```
@@ -65,20 +48,15 @@ asv_guilds = read_csv(here("data/asv_unite_forward_ff.guilds.csv")) %>% clean_na
 
 ```
 ## Rows: 42601 Columns: 11
-```
-
-```
-## -- Column specification --------------------------------------------------------------------------------------------------------------------
+## -- Column specification -----------------------------------------------------------------------------------------------------
 ## Delimiter: ","
-## chr (11): sequence, taxonomy, Taxon, Taxon Level, Trophic Mode, Guild, Growth Morphology, Trait, Confidence Ranking, Notes, Citation/Source
-```
-
-```
+## chr (11): sequence, taxonomy, Taxon, Taxon Level, Trophic Mode, Guild, Growth Morphology, Trait, Confidence Ranking, Note...
 ## 
 ## i Use `spec()` to retrieve the full column specification for this data.
 ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 ```
 
+Rarefy to 45316 which is the toka-057-40 depth
 
 
 
@@ -86,7 +64,14 @@ asv_guilds = read_csv(here("data/asv_unite_forward_ff.guilds.csv")) %>% clean_na
 ```r
 asv_table = asv_tab_forward %>% 
   select(contains("TOKA")) %>% 
-  clean_names(case = "all_caps")
+  clean_names(case = "all_caps") %>% 
+  select(-TOKA_099_10) %>% 
+  t() %>% 
+  rrarefy(sample = min(rowSums(.))) %>% 
+  t() %>% 
+  as.data.frame()
+
+
 
 colnames(asv_table) = str_replace_all(colnames(asv_table), "_", "-")
 ```

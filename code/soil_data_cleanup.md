@@ -40,8 +40,7 @@ data_nut = tibble(files = list.files(here("data/soil"))) %>%
 
 ```
 ## Warning: The following named parsers don't match the column names: Total Nitrogen
-
-## Warning: The following named parsers don't match the column names: Total Nitrogen
+## The following named parsers don't match the column names: Total Nitrogen
 ```
 
 ```
@@ -57,16 +56,13 @@ data_rmn_raw = read_csv(here("data/soil/toka_soil_surveys.csv"))
 ```
 
 ```
-## -- Column specification --------------------------------------------------------------------------------------------------------------------
+## -- Column specification -----------------------------------------------------------------------------------------------------
 ## Delimiter: ","
-## chr  (10): Project, Study Area, Transect Name, Point Name, Protocol, Catenal Position, Researcher, Event Remarks, Observation Remarks, S...
-## dbl  (25): Sample Number, Sample Distance, Sample Bearing, Ring Infiltrometer Diameter, Water Volume, Bulk Density Diameter, Bulk Densit...
+## chr  (10): Project, Study Area, Transect Name, Point Name, Protocol, Catenal Position, Researcher, Event Remarks, Observa...
+## dbl  (25): Sample Number, Sample Distance, Sample Bearing, Ring Infiltrometer Diameter, Water Volume, Bulk Density Diamet...
 ## lgl   (4): Start Time, End Time, Water Infiltration Time 4, Other Observers Names
 ## date  (1): Date
 ## time  (3): Water Infiltration Time 1, Water Infiltration Time 2, Water Infiltration Time 3
-```
-
-```
 ## 
 ## i Use `spec()` to retrieve the full column specification for this data.
 ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -144,12 +140,9 @@ all_data = data_nut %>%
 
 ```
 ## Warning: One or more parsing issues, see `problems()` for details
-
-## Warning: One or more parsing issues, see `problems()` for details
-
-## Warning: One or more parsing issues, see `problems()` for details
-
-## Warning: One or more parsing issues, see `problems()` for details
+## One or more parsing issues, see `problems()` for details
+## One or more parsing issues, see `problems()` for details
+## One or more parsing issues, see `problems()` for details
 ```
 
 
@@ -253,30 +246,38 @@ summary(change40)
 ```
 
 ```
-##    depth_cm           point_id            n_change           n_2018            sand            silt           clay       total_nitrogen
-##  Length:40          Length:40          Min.   :-0.1800   Min.   :0.1400   Min.   :15.00   Min.   :16.2   Min.   :17.50   Min.   : NA   
-##  Class :character   Class :character   1st Qu.: 0.0100   1st Qu.:0.2100   1st Qu.:22.50   1st Qu.:30.9   1st Qu.:30.90   1st Qu.: NA   
-##  Mode  :character   Mode  :character   Median : 0.0200   Median :0.2300   Median :28.80   Median :36.2   Median :33.80   Median : NA   
-##                                        Mean   : 0.0169   Mean   :0.2486   Mean   :32.01   Mean   :34.8   Mean   :33.17   Mean   :NaN   
-##                                        3rd Qu.: 0.0400   3rd Qu.:0.2700   3rd Qu.:36.52   3rd Qu.:40.0   3rd Qu.:36.52   3rd Qu.: NA   
-##                                        Max.   : 0.0600   Max.   :0.5100   Max.   :60.00   Max.   :45.0   Max.   :53.80   Max.   : NA   
-##                                        NA's   :11        NA's   :11                                                      NA's   :40    
-##   nitrogen2018     nitrogen2015    total_nitrogen_2    p_h2018         p_h2015        p_h_change          depth         2015    
-##  Min.   :0.1400   Min.   :0.1200   Min.   : NA      Min.   :5.100   Min.   :5.000   Min.   :-1.0000   Min.   :40   Min.   :1.4  
-##  1st Qu.:0.2100   1st Qu.:0.1900   1st Qu.: NA      1st Qu.:5.800   1st Qu.:5.375   1st Qu.: 0.4000   1st Qu.:40   1st Qu.:2.0  
-##  Median :0.2300   Median :0.2200   Median : NA      Median :6.000   Median :5.600   Median : 0.6000   Median :40   Median :2.2  
-##  Mean   :0.2486   Mean   :0.2238   Mean   :NaN      Mean   :5.941   Mean   :5.555   Mean   : 0.4552   Mean   :40   Mean   :2.4  
-##  3rd Qu.:0.2700   3rd Qu.:0.2500   3rd Qu.: NA      3rd Qu.:6.100   3rd Qu.:5.700   3rd Qu.: 0.6000   3rd Qu.:40   3rd Qu.:2.5  
-##  Max.   :0.5100   Max.   :0.4800   Max.   : NA      Max.   :6.400   Max.   :6.300   Max.   : 0.9000   Max.   :40   Max.   :5.9  
-##  NA's   :11                        NA's   :40       NA's   :11                      NA's   :11                     NA's   :4    
-##       2018            2021            2014          change18          change21          c_n_ratio          c_n_15         cn_change      
-##  Min.   :1.400   Min.   :1.300   Min.   :1.700   Min.   :-0.8000   Min.   :-0.30000   Min.   : 7.368   Min.   : 7.917   Min.   :-3.3333  
-##  1st Qu.:2.075   1st Qu.:2.000   1st Qu.:1.775   1st Qu.:-0.2250   1st Qu.:-0.10000   1st Qu.: 8.400   1st Qu.: 9.579   1st Qu.:-1.7872  
-##  Median :2.200   Median :2.200   Median :2.250   Median :-0.1000   Median : 0.10000   Median : 9.333   Median :10.417   Median :-0.9947  
-##  Mean   :2.335   Mean   :2.167   Mean   :2.275   Mean   :-0.0525   Mean   : 0.04667   Mean   : 9.675   Mean   :10.536   Mean   :-0.9593  
-##  3rd Qu.:2.425   3rd Qu.:2.450   3rd Qu.:2.750   3rd Qu.: 0.1250   3rd Qu.: 0.15000   3rd Qu.:10.000   3rd Qu.:11.271   3rd Qu.:-0.6111  
-##  Max.   :5.300   Max.   :2.700   Max.   :2.900   Max.   : 0.6000   Max.   : 0.40000   Max.   :23.043   Max.   :14.390   Max.   : 8.6532  
-##                  NA's   :25      NA's   :36                        NA's   :25         NA's   :11       NA's   :4        NA's   :13
+##    depth_cm           point_id            n_change           n_2018            sand            silt           clay      
+##  Length:40          Length:40          Min.   :-0.1800   Min.   :0.1400   Min.   :15.00   Min.   :16.2   Min.   :17.50  
+##  Class :character   Class :character   1st Qu.: 0.0100   1st Qu.:0.2100   1st Qu.:22.50   1st Qu.:30.9   1st Qu.:30.90  
+##  Mode  :character   Mode  :character   Median : 0.0200   Median :0.2300   Median :28.80   Median :36.2   Median :33.80  
+##                                        Mean   : 0.0169   Mean   :0.2486   Mean   :32.01   Mean   :34.8   Mean   :33.17  
+##                                        3rd Qu.: 0.0400   3rd Qu.:0.2700   3rd Qu.:36.52   3rd Qu.:40.0   3rd Qu.:36.52  
+##                                        Max.   : 0.0600   Max.   :0.5100   Max.   :60.00   Max.   :45.0   Max.   :53.80  
+##                                        NA's   :11        NA's   :11                                                     
+##  total_nitrogen  nitrogen2018     nitrogen2015    total_nitrogen_2    p_h2018         p_h2015        p_h_change     
+##  Min.   : NA    Min.   :0.1400   Min.   :0.1200   Min.   : NA      Min.   :5.100   Min.   :5.000   Min.   :-1.0000  
+##  1st Qu.: NA    1st Qu.:0.2100   1st Qu.:0.1900   1st Qu.: NA      1st Qu.:5.800   1st Qu.:5.375   1st Qu.: 0.4000  
+##  Median : NA    Median :0.2300   Median :0.2200   Median : NA      Median :6.000   Median :5.600   Median : 0.6000  
+##  Mean   :NaN    Mean   :0.2486   Mean   :0.2238   Mean   :NaN      Mean   :5.941   Mean   :5.555   Mean   : 0.4552  
+##  3rd Qu.: NA    3rd Qu.:0.2700   3rd Qu.:0.2500   3rd Qu.: NA      3rd Qu.:6.100   3rd Qu.:5.700   3rd Qu.: 0.6000  
+##  Max.   : NA    Max.   :0.5100   Max.   :0.4800   Max.   : NA      Max.   :6.400   Max.   :6.300   Max.   : 0.9000  
+##  NA's   :40     NA's   :11                        NA's   :40       NA's   :11                      NA's   :11       
+##      depth         2015          2018            2021            2014          change18          change21       
+##  Min.   :40   Min.   :1.4   Min.   :1.400   Min.   :1.300   Min.   :1.700   Min.   :-0.8000   Min.   :-0.30000  
+##  1st Qu.:40   1st Qu.:2.0   1st Qu.:2.075   1st Qu.:2.000   1st Qu.:1.775   1st Qu.:-0.2250   1st Qu.:-0.10000  
+##  Median :40   Median :2.2   Median :2.200   Median :2.200   Median :2.250   Median :-0.1000   Median : 0.10000  
+##  Mean   :40   Mean   :2.4   Mean   :2.335   Mean   :2.167   Mean   :2.275   Mean   :-0.0525   Mean   : 0.04667  
+##  3rd Qu.:40   3rd Qu.:2.5   3rd Qu.:2.425   3rd Qu.:2.450   3rd Qu.:2.750   3rd Qu.: 0.1250   3rd Qu.: 0.15000  
+##  Max.   :40   Max.   :5.9   Max.   :5.300   Max.   :2.700   Max.   :2.900   Max.   : 0.6000   Max.   : 0.40000  
+##               NA's   :4                     NA's   :25      NA's   :36                        NA's   :25        
+##    c_n_ratio          c_n_15         cn_change      
+##  Min.   : 7.368   Min.   : 7.917   Min.   :-3.3333  
+##  1st Qu.: 8.400   1st Qu.: 9.579   1st Qu.:-1.7872  
+##  Median : 9.333   Median :10.417   Median :-0.9947  
+##  Mean   : 9.675   Mean   :10.536   Mean   :-0.9593  
+##  3rd Qu.:10.000   3rd Qu.:11.271   3rd Qu.:-0.6111  
+##  Max.   :23.043   Max.   :14.390   Max.   : 8.6532  
+##  NA's   :11       NA's   :4        NA's   :13
 ```
 
 
