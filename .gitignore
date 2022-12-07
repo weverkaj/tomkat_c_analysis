@@ -43,3 +43,6 @@ vignettes/*.pdf
 
 #fungal data (heavy)
 *fungal_sequencing*
+
+#writing
+documents/*
